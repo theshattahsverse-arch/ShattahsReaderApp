@@ -148,7 +148,7 @@ export function Navbar() {
             {/* Social Icons */}
             <div className="hidden sm:flex items-center gap-1.5">
               <a
-                href="https://facebook.com"
+                href="https://www.facebook.com/shattahsverse"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1877f2] text-white hover:bg-[#1877f2]/80 transition-colors shadow-md"
@@ -156,7 +156,7 @@ export function Navbar() {
                 <Facebook className="h-4 w-4" />
               </a>
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/shattahsverse"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white hover:opacity-80 transition-opacity shadow-md"
@@ -164,7 +164,7 @@ export function Navbar() {
                 <Instagram className="h-4 w-4" />
               </a>
               <a
-                href="https://x.com"
+                href="https://x.com/shattahsverse"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-black hover:bg-white/80 transition-colors shadow-md"
