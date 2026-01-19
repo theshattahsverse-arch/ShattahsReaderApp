@@ -105,16 +105,16 @@ export function HeroSection() {
         {/* Stats */}
         <div className="mt-16 grid grid-cols-3 gap-8 rounded-xl bg-black/40 px-8 py-6 backdrop-blur-sm sm:gap-16 sm:px-12">
           <div className="text-center">
-            <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">100+</div>
-            <div className="text-sm text-white/70">Comics</div>
+            <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">200+</div>
+            <div className="text-sm text-white/70">Artists</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">50K+</div>
-            <div className="text-sm text-white/70">Readers</div>
+            <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">50+</div>
+            <div className="text-sm text-white/70">Countries</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">4.9</div>
-            <div className="text-sm text-white/70">Rating</div>
+            <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl"> 1 </div>
+            <div className="text-sm text-white/70">Mission</div>
           </div>
         </div>
       </div>
