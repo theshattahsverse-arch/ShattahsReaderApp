@@ -90,7 +90,7 @@ export function HeroSection() {
               <ChevronRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
-          <Button
+<!--          <Button
             asChild
             variant="outline"
             size="lg"
@@ -99,7 +99,7 @@ export function HeroSection() {
             <Link href="/subscription">
               Go Premium
             </Link>
-          </Button>
+          </Button>  -->
         </div>
 
         {/* Stats */}
