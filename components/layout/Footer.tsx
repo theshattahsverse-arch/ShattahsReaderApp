@@ -9,7 +9,7 @@ export function Footer() {
           {/* Social Links */}
           <div className="flex items-center gap-3">
             <a
-              href="https://facebook.com"
+              href="https://www.facebook.com/shattahsverse"
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-10 w-10 items-center justify-center rounded-md bg-[#1877f2] text-white hover:bg-[#1877f2]/80 transition-colors"
@@ -18,7 +18,7 @@ export function Footer() {
               <Facebook className="h-5 w-5" />
             </a>
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/shattahsverse"
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-br from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white hover:opacity-80 transition-opacity"
@@ -27,7 +27,7 @@ export function Footer() {
               <Instagram className="h-5 w-5" />
             </a>
             <a
-              href="https://x.com"
+              href="hhttps://x.com/shattahsverse"
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-10 w-10 items-center justify-center rounded-md bg-foreground text-background hover:bg-foreground/80 transition-colors"
@@ -57,7 +57,7 @@ export function Footer() {
 
           {/* Copyright */}
           <div className="text-center text-sm text-muted-foreground">
-            <p>&copy; 2025 ShattahsVerse. The Multiverse will never be the same.</p>
+            <p>&copy; 2026 ShattahsVerse. The Multiverse will never be the same.</p>
           </div>
         </div>
       </div>
