@@ -90,16 +90,6 @@ export function HeroSection() {
               <ChevronRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
-<!--          <Button
-            asChild
-            variant="outline"
-            size="lg"
-            className="border-amber/70 text-amber hover:bg-amber/20 font-bold text-lg px-8 backdrop-blur-sm bg-black/30"
-          >
-            <Link href="/subscription">
-              Go Premium
-            </Link>
-          </Button>  -->
         </div>
 
         {/* Stats */}
