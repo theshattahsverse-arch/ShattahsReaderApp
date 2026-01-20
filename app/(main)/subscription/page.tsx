@@ -33,7 +33,7 @@ const plans = [
   {
     name: 'Premium',
     description: 'For dedicated comic enthusiasts',
-    price: '$9.99',
+    price: '$0.99',
     period: 'per month',
     features: [
       'All comics unlocked',
@@ -52,7 +52,7 @@ const plans = [
   {
     name: 'Ultimate',
     description: 'The complete multiverse experience',
-    price: '$19.99',
+    price: '$4.99',
     period: 'per month',
     features: [
       'Everything in Premium',
