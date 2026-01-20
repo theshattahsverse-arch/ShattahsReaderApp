@@ -90,7 +90,7 @@ export default function SubscriptionPage() {
             <span className="text-amber">Multiverse</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Choose the plan that&apos;s right for you and get unlimited access to premium comics,
+            Choose the plan that&apos;s right for you. Grab a day pass or Subscribe and get unlimited access to premium comics,
             exclusive content, and more.
           </p>
         </div>
@@ -176,16 +176,12 @@ export default function SubscriptionPage() {
                 a: 'Yes, you can cancel your subscription at any time. You will continue to have access until the end of your billing period.',
               },
               {
-                q: 'Is there a free trial?',
-                a: 'Yes! Premium subscribers get a 7-day free trial. Cancel anytime during the trial and you won\'t be charged.',
-              },
-              {
                 q: 'What payment methods do you accept?',
                 a: 'We accept all major credit cards, PayPal, and various regional payment methods through our secure payment processor.',
               },
               {
                 q: 'Can I switch between plans?',
-                a: 'Absolutely! You can upgrade or downgrade your plan at any time. Changes take effect on your next billing cycle.',
+                a: 'Absolutely! You can upgrade or cancel your subscription at any time. Changes take effect on your next billing cycle.',
               },
             ].map((faq, index) => (
               <div
