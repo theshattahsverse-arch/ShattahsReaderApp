@@ -10,27 +10,7 @@ export const metadata = {
 }
 
 const plans = [
-  {
-    name: 'Free',
-    description: 'Perfect for casual readers',
-    price: '$0',
-    period: 'forever',
-    features: [
-      'Access to free comics',
-      'Basic reading experience',
-      'Community features',
-      'Mobile-friendly reader',
-    ],
-    limitations: [
-      'Ads between chapters',
-      'Limited to free titles',
-      'No offline reading',
-    ],
-    cta: 'Current Plan',
-    popular: false,
-    icon: Star,
-  },
-  {
+ {
     name: 'Premium',
     description: 'Become an Exclusive Shattahs Member',
     price: '$1.99',
