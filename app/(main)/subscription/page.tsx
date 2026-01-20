@@ -66,8 +66,8 @@ export default function SubscriptionPage() {
             Subscription Plans
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Unlock the Full{' '}
-            <span className="text-amber">Multiverse</span>
+            Unlock the {' '}
+            <span className="text-amber">Shattahsverse</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
             Choose the plan that&apos;s right for you. Grab a day pass or Subscribe and get unlimited access to premium comics,
