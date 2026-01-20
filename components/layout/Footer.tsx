@@ -50,10 +50,10 @@ export function Footer() {
             <Link href="/subscription" className="hover:text-amber transition-colors">
               Subscription
             </Link>
-  /*          <Link href="/about" className="hover:text-amber transition-colors"> */
+           <Link href="/about" className="hover:text-amber transition-colors"> 
               About
             </Link>  
- /*         </div>    */
+          </div>    
 
           {/* Copyright */}
           <div className="text-center text-sm text-muted-foreground">
