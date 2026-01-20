@@ -51,7 +51,7 @@ const plans = [
   },
   {
     name: 'Ultimate',
-    description: 'Grab a day Pass',
+    description: 'Grab a Day Pass',
     price: '$4.99',
     period: 'One Time',
     features: [
