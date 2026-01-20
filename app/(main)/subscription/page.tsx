@@ -32,9 +32,9 @@ const plans = [
   },
   {
     name: 'Premium',
-    description: 'For dedicated comic enthusiasts',
-    price: '$0.99',
-    period: 'per month',
+    description: 'Become an Exclusive Shattahs Member',
+    price: '$1.99',
+    period: 'per week',
     features: [
       'All comics unlocked',
       'Ad-free experience',
@@ -51,9 +51,9 @@ const plans = [
   },
   {
     name: 'Ultimate',
-    description: 'The complete multiverse experience',
+    description: 'Grab a day Pass',
     price: '$4.99',
-    period: 'per month',
+    period: 'One Time',
     features: [
       'Everything in Premium',
       'Exclusive collector editions',
