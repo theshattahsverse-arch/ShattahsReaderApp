@@ -32,7 +32,7 @@ const plans = [
   {
     name: 'Day Pass',
     description: 'Grab a Day Pass',
-    price: '$4.99',
+    price: '$5.99',
     period: 'One Time',
     features: [
       'Current comic unlocked',
