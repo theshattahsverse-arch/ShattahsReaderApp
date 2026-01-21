@@ -78,11 +78,11 @@ export default function SubscriptionPage() {
 
       {/* Pricing Cards */}
       <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="flex flex-wrap justify-center gap-8">
           {plans.map((plan) => (
             <Card
               key={plan.name}
-              className={`relative flex flex-col ${
+              className={`relative flex flex-col w-full max-w-sm ${
                 plan.popular
                   ? 'border-amber/50 shadow-lg shadow-amber/10'
                   : 'border-border/50'
