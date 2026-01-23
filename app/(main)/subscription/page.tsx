@@ -133,7 +133,8 @@ export default function SubscriptionPage() {
             <span className="text-amber">Shattahsverse</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Choose the plan that&apos;s right for you. Grab a day pass or Subscribe and get unlimited access to premium comics,
+            All Power to the Artists! 
+            Choose the plan that&apos;s right for you so we can continue to work with the best Art Talent around the Globe. Grab a day pass or Subscribe and get unlimited access to premium comics,
             exclusive content, and more.
           </p>
         </div>
