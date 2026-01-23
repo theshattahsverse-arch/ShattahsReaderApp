@@ -15,6 +15,8 @@ import {
   LayoutGrid,
   LayoutList,
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { SubscriptionGateDialog } from './SubscriptionGateDialog'
 import type { Comic } from '@/types/database'
 
 interface PageWithUrl {
@@ -31,6 +33,8 @@ interface ComicReaderProps {
 
 type ReadingMode = 'vertical' | 'horizontal'
 
+const FREE_PAGE_LIMIT = 4 // Users can access pages 0-3 (pages 1-4)
+
 export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }: ComicReaderProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -39,10 +43,88 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   const [showControls, setShowControls] = useState(true)
   const [imageError, setImageError] = useState(false)
   const [readingMode, setReadingMode] = useState<ReadingMode>('vertical')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false)
   const horizontalContainerRef = useRef<HTMLDivElement>(null)
   const verticalContainerRef = useRef<HTMLDivElement>(null)
   const currentPageRef = useRef(currentPage)
   const totalPagesRef = useRef(pages.length)
+
+  // Check authentication and subscription status
+  useEffect(() => {
+    const checkAuthAndSubscription = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (!user) {
+          setIsAuthenticated(false)
+          setHasActiveSubscription(false)
+          setIsCheckingAuth(false)
+          return
+        }
+
+        setIsAuthenticated(true)
+
+        // Check subscription status
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('subscription_status, subscription_end_date')
+          .eq('id', user.id)
+          .single()
+
+        if (error || !profile) {
+          setHasActiveSubscription(false)
+          setIsCheckingAuth(false)
+          return
+        }
+
+        // Check if subscription is active and not expired
+        const subscriptionStatus = (profile as any).subscription_status
+        const subscriptionEndDate = (profile as any).subscription_end_date
+
+        if (subscriptionStatus === 'active' && subscriptionEndDate) {
+          const endDate = new Date(subscriptionEndDate)
+          const now = new Date()
+          setHasActiveSubscription(endDate > now)
+        } else {
+          setHasActiveSubscription(false)
+        }
+      } catch (error) {
+        console.error('Error checking auth/subscription:', error)
+        setIsAuthenticated(false)
+        setHasActiveSubscription(false)
+      } finally {
+        setIsCheckingAuth(false)
+      }
+    }
+
+    checkAuthAndSubscription()
+
+    // Listen for auth state changes
+    const supabase = createClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        await checkAuthAndSubscription()
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  // Check if user can access a specific page
+  const canAccessPage = useCallback((pageIndex: number): boolean => {
+    // Always allow access to free pages (0-3)
+    if (pageIndex < FREE_PAGE_LIMIT) {
+      return true
+    }
+    // For pages beyond free limit, require authentication and active subscription
+    return isAuthenticated && hasActiveSubscription
+  }, [isAuthenticated, hasActiveSubscription])
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -52,6 +134,19 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   useEffect(() => {
     totalPagesRef.current = pages.length
   }, [pages.length])
+
+  // Check initial page access on mount
+  useEffect(() => {
+    if (!isCheckingAuth && !canAccessPage(initialPageIndex)) {
+      // If user tries to access restricted page directly, redirect to last free page
+      if (initialPageIndex >= FREE_PAGE_LIMIT) {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('page', FREE_PAGE_LIMIT.toString())
+        router.replace(`/comics/read/${comic.id}?${params.toString()}`, { scroll: false })
+        setCurrentPage(FREE_PAGE_LIMIT - 1)
+      }
+    }
+  }, [isCheckingAuth, initialPageIndex, canAccessPage, comic.id, router, searchParams])
 
   const totalPages = pages.length
   const currentPageData = pages[currentPage]
@@ -63,6 +158,30 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
     params.set('page', newPage.toString())
     router.replace(`/comics/read/${comic.id}?${params.toString()}`, { scroll: false })
   }, [currentPage, comic.id, router, searchParams])
+
+  // Check if current page is restricted and show dialog if needed (for navigation methods)
+  useEffect(() => {
+    if (!isCheckingAuth && !canAccessPage(currentPage) && currentPage >= FREE_PAGE_LIMIT) {
+      setShowSubscriptionDialog(true)
+      // Scroll back to last accessible page
+      const lastFreePage = FREE_PAGE_LIMIT - 1
+      if (readingMode === 'vertical' && verticalContainerRef.current) {
+        const lastFreePageElement = verticalContainerRef.current.children[lastFreePage] as HTMLElement
+        if (lastFreePageElement) {
+          lastFreePageElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      } else if (readingMode === 'horizontal' && horizontalContainerRef.current) {
+        const lastFreePageElement = horizontalContainerRef.current.children[lastFreePage] as HTMLElement
+        if (lastFreePageElement) {
+          lastFreePageElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+        }
+      }
+      // Use a timeout to prevent state update conflicts
+      setTimeout(() => {
+        setCurrentPage(lastFreePage)
+      }, 100)
+    }
+  }, [currentPage, canAccessPage, isCheckingAuth, readingMode])
 
   // Scroll to current page based on reading mode
   useEffect(() => {
@@ -78,6 +197,68 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
       }
     }
   }, [currentPage, readingMode])
+
+  // Detect scroll in vertical mode to automatically show dialog when viewing restricted page
+  useEffect(() => {
+    if (readingMode !== 'vertical' || !verticalContainerRef.current || isCheckingAuth) return
+
+    const container = verticalContainerRef.current
+    let scrollTimeout: NodeJS.Timeout
+    let lastCheckedPage = currentPage
+
+    const handleScroll = () => {
+      // Debounce scroll events
+      clearTimeout(scrollTimeout)
+      scrollTimeout = setTimeout(() => {
+        // Find which page is currently most visible in viewport
+        const viewportHeight = window.innerHeight
+        const viewportCenter = viewportHeight / 2
+        
+        let mostVisiblePageIndex = 0
+        let maxVisibility = 0
+
+        Array.from(container.children).forEach((child, index) => {
+          const childRect = child.getBoundingClientRect()
+          const childTop = childRect.top
+          const childBottom = childRect.bottom
+          const childHeight = childRect.height
+          
+          // Calculate how much of the page is visible in viewport
+          const visibleTop = Math.max(0, viewportCenter - childTop)
+          const visibleBottom = Math.max(0, childBottom - viewportCenter)
+          const visibility = Math.min(visibleTop, visibleBottom, childHeight / 2) / (childHeight / 2)
+          
+          if (visibility > maxVisibility) {
+            maxVisibility = visibility
+            mostVisiblePageIndex = index
+          }
+        })
+
+        // If user scrolled to a restricted page and it's different from last checked, show dialog
+        if (
+          !canAccessPage(mostVisiblePageIndex) && 
+          mostVisiblePageIndex >= FREE_PAGE_LIMIT &&
+          mostVisiblePageIndex !== lastCheckedPage
+        ) {
+          lastCheckedPage = mostVisiblePageIndex
+          setShowSubscriptionDialog(true)
+          // Scroll back to last accessible page
+          const lastFreePage = FREE_PAGE_LIMIT - 1
+          const lastFreePageElement = container.children[lastFreePage] as HTMLElement
+          if (lastFreePageElement) {
+            lastFreePageElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            setCurrentPage(lastFreePage)
+          }
+        }
+      }, 150) // Debounce delay
+    }
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+      clearTimeout(scrollTimeout)
+    }
+  }, [readingMode, canAccessPage, currentPage, isCheckingAuth])
 
   // Hide controls after inactivity
   useEffect(() => {
@@ -125,16 +306,42 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   }
 
   const goToNextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1)
-      setImageError(false)
+    const nextPage = currentPage + 1
+    if (nextPage < totalPages) {
+      if (canAccessPage(nextPage)) {
+        setCurrentPage(nextPage)
+        setImageError(false)
+      } else {
+        // Show subscription dialog
+        setShowSubscriptionDialog(true)
+      }
     }
   }
 
   const goToPage = (pageNumber: number) => {
     const pageIndex = Math.max(0, Math.min(pageNumber - 1, totalPages - 1))
-    setCurrentPage(pageIndex)
-    setImageError(false)
+    if (canAccessPage(pageIndex)) {
+      setCurrentPage(pageIndex)
+      setImageError(false)
+    } else {
+      // Show subscription dialog
+      setShowSubscriptionDialog(true)
+    }
+  }
+
+  const handlePageClick = (pageIndex: number, e?: React.MouseEvent) => {
+    // Stop event propagation to prevent parent onClick from firing
+    if (e) {
+      e.stopPropagation()
+    }
+    
+    if (canAccessPage(pageIndex)) {
+      setCurrentPage(pageIndex)
+      setImageError(false)
+    } else {
+      // Show subscription dialog
+      setShowSubscriptionDialog(true)
+    }
   }
 
   // Keyboard navigation
@@ -148,9 +355,14 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
     } else if (e.key === 'ArrowRight' || e.key === 'd') {
       const page = currentPageRef.current
       const total = totalPagesRef.current
-      if (page < total - 1) {
-        setCurrentPage(page + 1)
-        setImageError(false)
+      const nextPage = page + 1
+      if (nextPage < total) {
+        if (canAccessPage(nextPage)) {
+          setCurrentPage(nextPage)
+          setImageError(false)
+        } else {
+          setShowSubscriptionDialog(true)
+        }
       }
     } else if (e.key === 'f') {
       toggleFullscreen()
@@ -159,7 +371,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
     } else if (e.key === 'r' || e.key === 'R') {
       setReadingMode((prev) => (prev === 'vertical' ? 'horizontal' : 'vertical'))
     }
-  }, [])
+  }, [canAccessPage])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
@@ -268,47 +480,58 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
             className="flex flex-col items-center gap-4 px-4 py-16"
             ref={verticalContainerRef}
           >
-            {pages.map((page, index) => (
-              <div
-                key={page.id}
-                className={`relative w-full max-w-4xl transition-opacity ${
-                  index === currentPage ? 'opacity-100' : 'opacity-60'
-                }`}
-                style={{ aspectRatio: '2/3' }}
-              >
-                {!page.image_url ? (
-                  <div className="flex aspect-[2/3] w-full items-center justify-center bg-card rounded-lg">
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-muted-foreground">
-                        Page {index + 1}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Image not available
-                      </p>
+            {pages.map((page, index) => {
+              const isLocked = !canAccessPage(index)
+              return (
+                <div
+                  key={page.id}
+                  className={`relative w-full max-w-4xl transition-opacity ${
+                    index === currentPage ? 'opacity-100' : 'opacity-60'
+                  } ${isLocked ? 'blur-sm' : ''}`}
+                  style={{ aspectRatio: '2/3' }}
+                >
+                  {!page.image_url ? (
+                    <div className="flex aspect-[2/3] w-full items-center justify-center bg-card rounded-lg">
+                      <div className="text-center">
+                        <p className="text-lg font-semibold text-muted-foreground">
+                          Page {index + 1}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Image not available
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="relative aspect-[2/3] w-full">
-                    <Image
-                      src={page.image_url}
-                      alt={`Page ${index + 1}`}
-                      fill
-                      className="object-contain cursor-pointer"
-                      priority={index === initialPageIndex}
-                      onClick={() => {
-                        setCurrentPage(index)
-                        setImageError(false)
-                      }}
-                      onError={() => {
-                        if (index === currentPage) {
-                          setImageError(true)
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
+                  ) : (
+                    <div className="relative aspect-[2/3] w-full">
+                      <Image
+                        src={page.image_url}
+                        alt={`Page ${index + 1}`}
+                        fill
+                        className={`object-contain ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                        priority={index === initialPageIndex}
+                        onClick={(e) => handlePageClick(index, e)}
+                        onError={() => {
+                          if (index === currentPage) {
+                            setImageError(true)
+                          }
+                        }}
+                      />
+                      {isLocked && (
+                        <div 
+                          className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg cursor-pointer z-10"
+                          onClick={(e) => handlePageClick(index, e)}
+                        >
+                          <div className="text-center text-white">
+                            <p className="text-lg font-semibold">Locked</p>
+                            <p className="text-sm">Subscribe to unlock</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       ) : (
@@ -320,50 +543,70 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
             className="flex h-screen items-center gap-2 px-2 py-16"
             ref={horizontalContainerRef}
           >
-            {pages.map((page, index) => (
-              <div
-                key={page.id}
-                className={`relative flex-shrink-0 transition-opacity ${
-                  index === currentPage ? 'opacity-100' : 'opacity-60'
-                }`}
-                style={{ height: '90vh', aspectRatio: '2/3' }}
-              >
-                {!page.image_url ? (
-                  <div className="flex h-full w-full items-center justify-center bg-card rounded-lg">
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-muted-foreground">
-                        Page {index + 1}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Image not available
-                      </p>
+            {pages.map((page, index) => {
+              const isLocked = !canAccessPage(index)
+              return (
+                <div
+                  key={page.id}
+                  className={`relative flex-shrink-0 transition-opacity ${
+                    index === currentPage ? 'opacity-100' : 'opacity-60'
+                  } ${isLocked ? 'blur-sm' : ''}`}
+                  style={{ height: '90vh', aspectRatio: '2/3' }}
+                >
+                  {!page.image_url ? (
+                    <div className="flex h-full w-full items-center justify-center bg-card rounded-lg">
+                      <div className="text-center">
+                        <p className="text-lg font-semibold text-muted-foreground">
+                          Page {index + 1}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Image not available
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="relative h-full w-full">
-                    <Image
-                      src={page.image_url}
-                      alt={`Page ${index + 1}`}
-                      fill
-                      className="object-contain cursor-pointer"
-                      priority={index === initialPageIndex}
-                      onClick={() => {
-                        setCurrentPage(index)
-                        setImageError(false)
-                      }}
-                      onError={() => {
-                        if (index === currentPage) {
-                          setImageError(true)
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
+                  ) : (
+                    <div className="relative h-full w-full">
+                      <Image
+                        src={page.image_url}
+                        alt={`Page ${index + 1}`}
+                        fill
+                        className={`object-contain ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                        priority={index === initialPageIndex}
+                        onClick={(e) => handlePageClick(index, e)}
+                        onError={() => {
+                          if (index === currentPage) {
+                            setImageError(true)
+                          }
+                        }}
+                      />
+                      {isLocked && (
+                        <div 
+                          className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg cursor-pointer z-10"
+                          onClick={(e) => handlePageClick(index, e)}
+                        >
+                          <div className="text-center text-white">
+                            <p className="text-lg font-semibold">Locked</p>
+                            <p className="text-sm">Subscribe to unlock</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
+
+      {/* Subscription Gate Dialog */}
+      <SubscriptionGateDialog
+        open={showSubscriptionDialog}
+        onOpenChange={setShowSubscriptionDialog}
+        isAuthenticated={isAuthenticated}
+        hasActiveSubscription={hasActiveSubscription}
+        currentUrl={`/comics/read/${comic.id}?page=${currentPage + 2}`}
+      />
 
       {/* Bottom Controls */}
       <div

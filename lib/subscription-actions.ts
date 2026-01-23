@@ -117,7 +117,7 @@ export function calculateSubscriptionEndDate(planType: 'member' | 'daypass'): Da
 }
 
 /**
- * Get plan details
+ * Get plan details 
  */
 export function getPlanDetails(planName: string) {
   const plans: Record<string, { amount: number; tier: SubscriptionTier; interval?: string }> = {
