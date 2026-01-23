@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -50,7 +50,7 @@ const plans = [
   },
 ]
 
-export default function SubscriptionPage() {
+function SubscriptionContent() {
   const [loading, setLoading] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -258,5 +258,17 @@ export default function SubscriptionPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-amber" />
+      </div>
+    }>
+      <SubscriptionContent />
+    </Suspense>
   )
 }
