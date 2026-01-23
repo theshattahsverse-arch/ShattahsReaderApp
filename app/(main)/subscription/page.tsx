@@ -1,19 +1,19 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Check, Crown, Zap, Star } from 'lucide-react'
-
-export const metadata = {
-  title: 'Subscription Plans',
-  description: 'Choose your ShattahsVerse subscription plan',
-}
+import { Check, Crown, Zap, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 const plans = [
- {
+  {
     name: 'Shattahs Member',
     description: 'Become an Exclusive Shattahs Member',
-    price: '$1.99',
+    price: '₦2000',
     period: 'per week',
     features: [
       'Access to competition rewards',
@@ -32,7 +32,7 @@ const plans = [
   {
     name: 'Day Pass',
     description: 'Grab a Day Pass',
-    price: '$4.99',
+    price: '₦5000',
     period: 'One Time',
     features: [
       'Current comic unlocked',
@@ -51,6 +51,69 @@ const plans = [
 ]
 
 export default function SubscriptionPage() {
+  const [loading, setLoading] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  useEffect(() => {
+    // Handle success/error messages from URL params
+    const success = searchParams.get('success')
+    const error = searchParams.get('error')
+    const plan = searchParams.get('plan')
+
+    if (success === 'true') {
+      toast.success(`Successfully subscribed to ${plan || 'plan'}!`)
+      // Clean up URL
+      router.replace('/subscription', { scroll: false })
+    } else if (error) {
+      const errorMessages: Record<string, string> = {
+        no_reference: 'Payment reference not found. Please try again.',
+        payment_failed: 'Payment failed. Please try again.',
+        invalid_metadata: 'Invalid payment data. Please contact support.',
+        verification_failed: 'Payment verification failed. Please contact support.',
+      }
+      toast.error(errorMessages[error] || 'An error occurred. Please try again.')
+      // Clean up URL
+      router.replace('/subscription', { scroll: false })
+    }
+  }, [searchParams, router])
+
+  const handleSubscribe = async (planName: string) => {
+    try {
+      setLoading(planName)
+
+      const response = await fetch('/api/payments/initialize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ planName }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to initialize payment')
+      }
+
+      // Redirect to Paystack payment page
+      if (data.authorization_url) {
+        window.location.href = data.authorization_url
+      } else if (data.subscription_code) {
+        // For subscriptions, Paystack will send an email
+        // But we can also redirect if there's an authorization URL
+        toast.info('Subscription initialized. Please check your email for payment instructions.')
+        router.push('/profile')
+      } else {
+        throw new Error('No payment URL received')
+      }
+    } catch (error: any) {
+      console.error('Subscription error:', error)
+      toast.error(error.message || 'Failed to initialize payment. Please try again.')
+      setLoading(null)
+    }
+  }
+
   return (
     <div className="min-h-screen pt-20">
       {/* Hero Section */}
@@ -135,9 +198,17 @@ export default function SubscriptionPage() {
                       : ''
                   }`}
                   variant={plan.popular ? 'default' : 'outline'}
-                  disabled={plan.name === 'Free'}
+                  disabled={plan.name === 'Free' || loading === plan.name}
+                  onClick={() => handleSubscribe(plan.name)}
                 >
-                  {plan.cta}
+                  {loading === plan.name ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    plan.cta
+                  )}
                 </Button>
               </CardFooter>
             </Card>
@@ -157,7 +228,7 @@ export default function SubscriptionPage() {
               },
               {
                 q: 'What payment methods do you accept?',
-                a: 'We accept all major credit cards, PayPal, and various regional payment methods through our secure payment processor.',
+                a: 'We accept all major credit cards and bank transfers through Paystack, our secure payment processor.',
               },
               {
                 q: 'Can I switch between plans?',
@@ -188,4 +259,3 @@ export default function SubscriptionPage() {
     </div>
   )
 }
-

@@ -40,6 +40,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   avatar_url TEXT,
   subscription_tier TEXT DEFAULT 'free',
   subscription_end_date TIMESTAMPTZ,
+  subscription_status TEXT DEFAULT 'free' CHECK (subscription_status IN ('free', 'active', 'cancelled', 'expired')),
+  paystack_customer_code TEXT,
+  paystack_subscription_code TEXT,
+  paystack_transaction_ref TEXT,
   is_admin BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

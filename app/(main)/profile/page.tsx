@@ -38,12 +38,39 @@ export default async function ProfilePage() {
     .single()
 
   const subscriptionTier = profile?.subscription_tier || 'free'
+  const subscriptionStatus = profile?.subscription_status || 'free'
+  const subscriptionEndDate = profile?.subscription_end_date
+  const hasActiveSubscription = subscriptionStatus === 'active' && subscriptionEndDate && new Date(subscriptionEndDate) > new Date()
 
   // Mock reading history - in production, fetch from user_reading_progress table
   const readingHistory = [
     { title: 'Shatteus: Issue 0', progress: '100%', lastRead: '2025-12-20' },
     { title: 'Neon Shadows', progress: '45%', lastRead: '2025-12-18' },
   ]
+
+  const getSubscriptionDisplayName = (tier: string) => {
+    switch (tier) {
+      case 'member':
+        return 'Shattahs Member'
+      case 'daypass':
+        return 'Day Pass'
+      default:
+        return 'Free'
+    }
+  }
+
+  const getSubscriptionStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-500/10 text-green-500 border-green-500/30">Active</Badge>
+      case 'cancelled':
+        return <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/30">Cancelled</Badge>
+      case 'expired':
+        return <Badge className="bg-red-500/10 text-red-500 border-red-500/30">Expired</Badge>
+      default:
+        return <Badge variant="outline">Free</Badge>
+    }
+  }
 
   return (
     <div className="min-h-screen pt-20">
@@ -71,8 +98,9 @@ export default async function ProfilePage() {
               <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <Badge className="bg-amber/10 text-amber border-amber/30">
                   <Crown className="mr-1 h-3 w-3" />
-                  {subscriptionTier === 'free' ? 'Free' : 'Premium'} Member
+                  {getSubscriptionDisplayName(subscriptionTier)}
                 </Badge>
+                {getSubscriptionStatusBadge(subscriptionStatus)}
                 <Badge variant="outline">
                   <Calendar className="mr-1 h-3 w-3" />
                   Joined {formatDate(user.created_at || new Date().toISOString())}
@@ -107,16 +135,63 @@ export default async function ProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="rounded-lg border border-border/50 bg-background/50 p-4">
-                  <div className="text-center">
-                    <h3 className="font-semibold capitalize text-lg">{subscriptionTier} Plan</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {subscriptionTier === 'free'
-                        ? 'Access to free comics only'
-                        : 'Full access to all content'}
-                    </p>
-                    {subscriptionTier === 'free' && (
+                  <div className="space-y-3">
+                    <div className="text-center">
+                      <h3 className="font-semibold text-lg">
+                        {getSubscriptionDisplayName(subscriptionTier)}
+                      </h3>
+                      <div className="mt-2 flex justify-center">
+                        {getSubscriptionStatusBadge(subscriptionStatus)}
+                      </div>
+                    </div>
+                    
+                    {hasActiveSubscription && subscriptionEndDate && (
+                      <div className="mt-4 space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Expires:</span>
+                          <span className="font-medium">
+                            {formatDate(subscriptionEndDate)}
+                          </span>
+                        </div>
+                        {subscriptionTier === 'member' && subscriptionStatus === 'active' && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Next billing:</span>
+                            <span className="font-medium">
+                              {formatDate(subscriptionEndDate)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {subscriptionTier === 'free' ? (
                       <Button asChild className="mt-4 w-full bg-amber hover:bg-amber-dark text-background">
                         <Link href="/subscription">Upgrade Now</Link>
+                      </Button>
+                    ) : subscriptionStatus === 'active' ? (
+                      <div className="mt-4 space-y-2">
+                        <p className="text-xs text-muted-foreground text-center">
+                          {subscriptionTier === 'member'
+                            ? 'Your subscription will automatically renew weekly'
+                            : 'Your day pass expires in 24 hours'}
+                        </p>
+                        {subscriptionTier === 'member' && (
+                          <Button 
+                            asChild 
+                            variant="outline" 
+                            className="w-full"
+                            onClick={async () => {
+                              // TODO: Implement cancel subscription
+                              // This would call an API to cancel the Paystack subscription
+                            }}
+                          >
+                            <Link href="/subscription">Manage Subscription</Link>
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <Button asChild className="mt-4 w-full bg-amber hover:bg-amber-dark text-background">
+                        <Link href="/subscription">Renew Subscription</Link>
                       </Button>
                     )}
                   </div>

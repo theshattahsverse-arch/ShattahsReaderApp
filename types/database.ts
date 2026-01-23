@@ -18,7 +18,11 @@ export interface Database {
           full_name: string | null
           avatar_url: string | null
           subscription_tier: string
+          subscription_status: string
           subscription_end_date: string | null
+          paystack_customer_code: string | null
+          paystack_subscription_code: string | null
+          paystack_transaction_ref: string | null
           is_admin: boolean
           created_at: string
           updated_at: string
@@ -29,7 +33,11 @@ export interface Database {
           full_name?: string | null
           avatar_url?: string | null
           subscription_tier?: string
+          subscription_status?: string
           subscription_end_date?: string | null
+          paystack_customer_code?: string | null
+          paystack_subscription_code?: string | null
+          paystack_transaction_ref?: string | null
           is_admin?: boolean
           created_at?: string
           updated_at?: string
@@ -40,7 +48,11 @@ export interface Database {
           full_name?: string | null
           avatar_url?: string | null
           subscription_tier?: string
+          subscription_status?: string
           subscription_end_date?: string | null
+          paystack_customer_code?: string | null
+          paystack_subscription_code?: string | null
+          paystack_transaction_ref?: string | null
           is_admin?: boolean
           created_at?: string
           updated_at?: string
