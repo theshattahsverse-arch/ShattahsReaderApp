@@ -53,54 +53,55 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   const totalPagesRef = useRef(pages.length)
 
   // Check authentication and subscription status
-  useEffect(() => {
-    const checkAuthAndSubscription = async () => {
-      try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        
-        if (!user) {
-          setIsAuthenticated(false)
-          setHasActiveSubscription(false)
-          setIsCheckingAuth(false)
-          return
-        }
-
-        setIsAuthenticated(true)
-
-        // Check subscription status
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('subscription_status, subscription_end_date')
-          .eq('id', user.id)
-          .single()
-
-        if (error || !profile) {
-          setHasActiveSubscription(false)
-          setIsCheckingAuth(false)
-          return
-        }
-
-        // Check if subscription is active and not expired
-        const subscriptionStatus = (profile as any).subscription_status
-        const subscriptionEndDate = (profile as any).subscription_end_date
-
-        if (subscriptionStatus === 'active' && subscriptionEndDate) {
-          const endDate = new Date(subscriptionEndDate)
-          const now = new Date()
-          setHasActiveSubscription(endDate > now)
-        } else {
-          setHasActiveSubscription(false)
-        }
-      } catch (error) {
-        console.error('Error checking auth/subscription:', error)
+  const checkAuthAndSubscription = useCallback(async () => {
+    try {
+      setIsCheckingAuth(true)
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
         setIsAuthenticated(false)
         setHasActiveSubscription(false)
-      } finally {
         setIsCheckingAuth(false)
+        return
       }
-    }
 
+      setIsAuthenticated(true)
+
+      // Check subscription status
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('subscription_status, subscription_end_date')
+        .eq('id', user.id)
+        .single()
+
+      if (error || !profile) {
+        setHasActiveSubscription(false)
+        setIsCheckingAuth(false)
+        return
+      }
+
+      // Check if subscription is active and not expired
+      const subscriptionStatus = (profile as any).subscription_status
+      const subscriptionEndDate = (profile as any).subscription_end_date
+
+      if (subscriptionStatus === 'active' && subscriptionEndDate) {
+        const endDate = new Date(subscriptionEndDate)
+        const now = new Date()
+        setHasActiveSubscription(endDate > now)
+      } else {
+        setHasActiveSubscription(false)
+      }
+    } catch (error) {
+      console.error('Error checking auth/subscription:', error)
+      setIsAuthenticated(false)
+      setHasActiveSubscription(false)
+    } finally {
+      setIsCheckingAuth(false)
+    }
+  }, [])
+
+  useEffect(() => {
     checkAuthAndSubscription()
 
     // Listen for auth state changes
@@ -111,10 +112,24 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
       }
     })
 
+    // Listen for window focus to refresh auth state when user returns from login
+    const handleFocus = () => {
+      checkAuthAndSubscription()
+    }
+    window.addEventListener('focus', handleFocus)
+
     return () => {
       subscription.unsubscribe()
+      window.removeEventListener('focus', handleFocus)
     }
-  }, [])
+  }, [checkAuthAndSubscription])
+
+  // Refresh auth state when dialog opens
+  useEffect(() => {
+    if (showSubscriptionDialog) {
+      checkAuthAndSubscription()
+    }
+  }, [showSubscriptionDialog, checkAuthAndSubscription])
 
   // Check if user can access a specific page
   const canAccessPage = useCallback((pageIndex: number): boolean => {

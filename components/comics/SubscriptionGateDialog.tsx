@@ -98,13 +98,6 @@ export function SubscriptionGateDialog({
               Sign In
             </Button>
           ) : null}
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto border-border/50 px-8 py-6 text-lg font-semibold hover:bg-white/10 hover:text-white hover:border-white/30"
-          >
-            Maybe Later
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
