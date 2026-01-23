@@ -53,11 +53,31 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   const totalPagesRef = useRef(pages.length)
 
   // Check authentication and subscription status
-  const checkAuthAndSubscription = useCallback(async () => {
+  const checkAuthAndSubscription = useCallback(async (retryCount = 0) => {
     try {
       setIsCheckingAuth(true)
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      
+      // Wait a bit if this is a retry to allow cookies to be set
+      if (retryCount > 0) {
+        await new Promise(resolve => setTimeout(resolve, 500 * retryCount))
+      }
+      
+      // Try to get session first (more reliable after redirect)
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      // If no session, try getUser as fallback
+      let user = session?.user
+      if (!user) {
+        const { data: { user: userData }, error: userError } = await supabase.auth.getUser()
+        if (userError || !userData) {
+          setIsAuthenticated(false)
+          setHasActiveSubscription(false)
+          setIsCheckingAuth(false)
+          return
+        }
+        user = userData
+      }
       
       if (!user) {
         setIsAuthenticated(false)
@@ -94,6 +114,11 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
       }
     } catch (error) {
       console.error('Error checking auth/subscription:', error)
+      // Retry once if this is the first attempt
+      if (retryCount === 0) {
+        setTimeout(() => checkAuthAndSubscription(1), 1000)
+        return
+      }
       setIsAuthenticated(false)
       setHasActiveSubscription(false)
     } finally {
@@ -102,32 +127,64 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   }, [])
 
   useEffect(() => {
+    // Initial check immediately
     checkAuthAndSubscription()
+
+    // Also check after delays to catch cases where cookies are still being set after redirect
+    const delayedCheck1 = setTimeout(() => {
+      checkAuthAndSubscription()
+    }, 500)
+    
+    const delayedCheck2 = setTimeout(() => {
+      checkAuthAndSubscription()
+    }, 1500)
 
     // Listen for auth state changes
     const supabase = createClient()
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-        await checkAuthAndSubscription()
+        // Small delay to ensure session is fully established
+        setTimeout(() => {
+          checkAuthAndSubscription()
+        }, 300)
       }
     })
 
     // Listen for window focus to refresh auth state when user returns from login
     const handleFocus = () => {
-      checkAuthAndSubscription()
+      setTimeout(() => {
+        checkAuthAndSubscription()
+      }, 300)
     }
     window.addEventListener('focus', handleFocus)
 
+    // Listen for visibility change (when tab becomes visible again)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        setTimeout(() => {
+          checkAuthAndSubscription()
+        }, 300)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
     return () => {
+      clearTimeout(delayedCheck1)
+      clearTimeout(delayedCheck2)
       subscription.unsubscribe()
       window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [checkAuthAndSubscription])
 
   // Refresh auth state when dialog opens
   useEffect(() => {
     if (showSubscriptionDialog) {
-      checkAuthAndSubscription()
+      // Delay to ensure any redirect has completed
+      const timeoutId = setTimeout(() => {
+        checkAuthAndSubscription()
+      }, 300)
+      return () => clearTimeout(timeoutId)
     }
   }, [showSubscriptionDialog, checkAuthAndSubscription])
 
