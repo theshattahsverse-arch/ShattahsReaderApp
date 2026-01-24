@@ -23,6 +23,9 @@ export interface Database {
           paystack_customer_code: string | null
           paystack_subscription_code: string | null
           paystack_transaction_ref: string | null
+          paypal_order_id: string | null
+          paypal_subscription_id: string | null
+          payment_provider: string | null
           is_admin: boolean
           created_at: string
           updated_at: string
@@ -38,6 +41,9 @@ export interface Database {
           paystack_customer_code?: string | null
           paystack_subscription_code?: string | null
           paystack_transaction_ref?: string | null
+          paypal_order_id?: string | null
+          paypal_subscription_id?: string | null
+          payment_provider?: string | null
           is_admin?: boolean
           created_at?: string
           updated_at?: string
@@ -53,6 +59,9 @@ export interface Database {
           paystack_customer_code?: string | null
           paystack_subscription_code?: string | null
           paystack_transaction_ref?: string | null
+          paypal_order_id?: string | null
+          paypal_subscription_id?: string | null
+          payment_provider?: string | null
           is_admin?: boolean
           created_at?: string
           updated_at?: string
