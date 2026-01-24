@@ -14,10 +14,12 @@ import {
   Minimize,
   LayoutGrid,
   LayoutList,
+  MessageSquare,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { SubscriptionGateDialog } from './SubscriptionGateDialog'
 import { PageComments } from './PageComments'
+import { CommentSidebar } from './CommentSidebar'
 import type { Comic } from '@/types/database'
 
 interface PageWithUrl {
@@ -48,6 +50,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false)
+  const [showCommentSidebar, setShowCommentSidebar] = useState(false)
   const horizontalContainerRef = useRef<HTMLDivElement>(null)
   const verticalContainerRef = useRef<HTMLDivElement>(null)
   const currentPageRef = useRef(currentPage)
@@ -431,6 +434,18 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
     }
   }
 
+  const navigateToPageById = useCallback((pageId: string) => {
+    const pageIndex = pages.findIndex(page => page.id === pageId)
+    if (pageIndex !== -1) {
+      if (canAccessPage(pageIndex)) {
+        setCurrentPage(pageIndex)
+        setImageError(false)
+      } else {
+        setShowSubscriptionDialog(true)
+      }
+    }
+  }, [pages, canAccessPage])
+
   const handlePageClick = (pageIndex: number, e?: React.MouseEvent) => {
     // Stop event propagation to prevent parent onClick from firing
     if (e) {
@@ -523,6 +538,15 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
 
           {/* Right controls */}
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowCommentSidebar(true)}
+              className="text-white hover:bg-white/10"
+              title="View all comments"
+            >
+              <MessageSquare className="h-5 w-5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -738,6 +762,16 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
         isAuthenticated={isAuthenticated}
         hasActiveSubscription={hasActiveSubscription}
         currentUrl={`/comics/read/${comic.id}?page=${currentPage + 2}`}
+      />
+
+      {/* Comment Sidebar */}
+      <CommentSidebar
+        comicId={comic.id}
+        currentPageId={currentPageData?.id || null}
+        currentPageNumber={currentPage + 1}
+        isVisible={showCommentSidebar}
+        onClose={() => setShowCommentSidebar(false)}
+        onNavigateToPage={navigateToPageById}
       />
 
       {/* Vertical Progress bar */}

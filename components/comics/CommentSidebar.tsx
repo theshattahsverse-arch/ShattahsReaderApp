@@ -16,6 +16,7 @@ interface CommentSidebarProps {
   currentPageNumber: number
   isVisible: boolean
   onClose: () => void
+  onNavigateToPage?: (pageId: string) => void
 }
 
 function formatRelativeTime(dateString: string): string {
@@ -56,18 +57,17 @@ function formatRelativeTime(dateString: string): string {
   return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`
 }
 
-export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVisible, onClose }: CommentSidebarProps) {
+export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVisible, onClose, onNavigateToPage }: CommentSidebarProps) {
   const [comments, setComments] = useState<CommentWithUser[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [commentContent, setCommentContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  // const [commentMode, setCommentMode] = useState<'page' | 'comic'>('page')
   const commentMode = 'comic' // Only comic-level comments
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
-  // const [showAllComments, setShowAllComments] = useState(false) // Commented out - only comic comments
+  const [pageIdToNumberMap, setPageIdToNumberMap] = useState<Map<string, number>>(new Map())
   const commentsEndRef = useRef<HTMLDivElement>(null)
   const commentsContainerRef = useRef<HTMLDivElement>(null)
 
@@ -82,11 +82,37 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
     checkAuth()
   }, [])
 
-  // Fetch initial comments
+  // Fetch page information to map page_id to page_number
+  const fetchPages = useCallback(async () => {
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('comic_pages')
+        .select('id, page_number')
+        .eq('comic_id', comicId)
+        .order('page_number', { ascending: true })
+      
+      if (error || !data) {
+        return
+      }
+
+      const pageMap = new Map<string, number>()
+      data.forEach((page: any) => {
+        if (page.id && page.page_number !== undefined) {
+          pageMap.set(page.id, page.page_number)
+        }
+      })
+      setPageIdToNumberMap(pageMap)
+    } catch (error) {
+      console.error('Error fetching pages:', error)
+    }
+  }, [comicId])
+
+  // Fetch initial comments - all comments for the comic
   const fetchComments = useCallback(async () => {
     try {
       setIsLoading(true)
-      // Only fetch comic-level comments (no page_id filter)
+      // Fetch all comments for the comic (no page_id filter)
       const url = `/api/comics/${comicId}/comments`
       const response = await fetch(url)
       const data = await response.json()
@@ -110,8 +136,9 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
   }, [comicId])
 
   useEffect(() => {
+    fetchPages()
     fetchComments()
-  }, [fetchComments])
+  }, [fetchPages, fetchComments])
 
   // Set up real-time subscription
   useEffect(() => {
@@ -235,8 +262,8 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
     }
   }
 
-  // Only show comic-level comments (page_id is null)
-  const displayedComments = comments.filter((comment) => comment.page_id === null)
+  // Show all comments for the comic
+  const displayedComments = comments
 
   if (!isVisible) return null
 
@@ -247,7 +274,7 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-white" />
-            <h2 className="text-lg font-semibold text-white">Comments</h2>
+            <h2 className="text-lg font-semibold text-white">All Comments</h2>
           </div>
           <div className="flex items-center gap-2">
             {/* Page/All toggle commented out - only comic comments */}
@@ -296,10 +323,18 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
             return (
               <div
                 key={comment.id}
-                className="bg-white/5 rounded-lg p-3 border border-white/10 animate-in fade-in slide-in-from-bottom-2"
+                className={`bg-white/5 rounded-lg p-3 border border-white/10 animate-in fade-in slide-in-from-bottom-2 ${
+                  comment.page_id && onNavigateToPage ? 'cursor-pointer hover:bg-white/10 transition-colors' : ''
+                }`}
+                onClick={() => {
+                  if (comment.page_id && onNavigateToPage) {
+                    onNavigateToPage(comment.page_id)
+                    onClose() // Close sidebar after navigation
+                  }
+                }}
               >
                 {isEditing ? (
-                  <div className="space-y-2">
+                  <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                     <textarea
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
@@ -351,19 +386,19 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
                         <p className="text-sm text-white/90 whitespace-pre-wrap break-words">
                           {comment.content}
                         </p>
-                        {/* Page indicator commented out - only comic comments */}
-                        {/* {comment.page_id && comment.page_id !== currentPageId && (
+                        {comment.page_id && (
                           <p className="text-xs text-amber/70 mt-1">
-                            Page {comment.page_id ? 'comment' : ''}
+                            Page {pageIdToNumberMap.get(comment.page_id) || '?'}
                           </p>
-                        )} */}
+                        )}
                       </div>
                       {isOwnComment && (
                         <div className="flex gap-1">
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation()
                               setEditingCommentId(comment.id)
                               setEditContent(comment.content)
                             }}
@@ -374,7 +409,10 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleDeleteComment(comment.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteComment(comment.id)
+                            }}
                             className="h-6 w-6 p-0 text-white/60 hover:text-red-500 hover:bg-white/10"
                           >
                             <Trash2 className="h-3 w-3" />
