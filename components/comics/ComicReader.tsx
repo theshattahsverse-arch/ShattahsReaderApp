@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { SubscriptionGateDialog } from './SubscriptionGateDialog'
+import { PageComments } from './PageComments'
 import type { Comic } from '@/types/database'
 
 interface PageWithUrl {
@@ -382,6 +383,19 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
     }
   }
 
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!document.fullscreenElement
+      setIsFullscreen(isCurrentlyFullscreen)
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    }
+  }, [])
+
   const toggleReadingMode = () => {
     setReadingMode((prev) => (prev === 'vertical' ? 'horizontal' : 'vertical'))
   }
@@ -611,6 +625,14 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
                           }
                         }}
                       />
+                      {/* Page Comments Overlay */}
+                      {!isFullscreen && !isLocked && (
+                        <PageComments
+                          comicId={comic.id}
+                          pageId={page.id}
+                          pageNumber={index + 1}
+                        />
+                      )}
                       {isLocked && (
                         <div 
                           className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg cursor-pointer z-10"
@@ -681,6 +703,14 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
                           }
                         }}
                       />
+                      {/* Page Comments Overlay */}
+                      {!isFullscreen && !isLocked && (
+                        <PageComments
+                          comicId={comic.id}
+                          pageId={page.id}
+                          pageNumber={index + 1}
+                        />
+                      )}
                       {isLocked && (
                         <div 
                           className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg cursor-pointer z-10"
@@ -710,19 +740,24 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
         currentUrl={`/comics/read/${comic.id}?page=${currentPage + 2}`}
       />
 
+      {/* Vertical Progress bar */}
+      <div
+        className={`fixed right-0 top-0 bottom-0 w-1 bg-white/20 z-40 transition-opacity duration-300 ${
+          showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <div
+          className="w-full bg-amber transition-all duration-300"
+          style={{ height: `${progressPercentage}%` }}
+        />
+      </div>
+
       {/* Bottom Controls */}
       <div
         className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/90 to-transparent transition-opacity duration-300 ${
           showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
-        {/* Progress bar */}
-        {/* <div className="h-1 w-full bg-white/20">
-          <div
-            className="h-full bg-amber transition-all duration-300"
-            style={{ width: `${progressPercentage}%` }}
-          />
-        </div> */}
 
         <div className="flex items-center justify-between px-4 py-3">
           {/* Page navigation */}

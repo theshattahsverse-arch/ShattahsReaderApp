@@ -238,3 +238,22 @@ export type ComicPage = Database['public']['Tables']['comic_pages']['Row']
 export type UserFavorite = Database['public']['Tables']['user_favorites']['Row']
 export type ComicComment = Database['public']['Tables']['comic_comments']['Row']
 export type UserReadingProgress = Database['public']['Tables']['user_reading_progress']['Row']
+
+// Extended types
+export interface CommentWithUser {
+  id: string
+  user_id: string
+  comic_id: string
+  page_id: string | null
+  parent_id: string | null
+  content: string
+  rating: number | null
+  created_at: string
+  updated_at: string
+  user: {
+    id: string
+    full_name: string | null
+    avatar_url: string | null
+    email: string | null
+  }
+}
