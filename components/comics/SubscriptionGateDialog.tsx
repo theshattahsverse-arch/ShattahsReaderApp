@@ -1,4 +1,4 @@
-'use client'
+e'use client'
 
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -75,7 +75,7 @@ export function SubscriptionGateDialog({
               </div>
             ) : (
               <p className="text-muted-foreground">
-                Sign in to continue reading this comic and access all pages.
+                Become a Shattahs Member to continue reading or grab a One Time Pass.
               </p>
             )}
           </DialogDescription>
