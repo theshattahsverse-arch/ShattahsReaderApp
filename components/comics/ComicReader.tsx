@@ -51,6 +51,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   const verticalContainerRef = useRef<HTMLDivElement>(null)
   const currentPageRef = useRef(currentPage)
   const totalPagesRef = useRef(pages.length)
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([])
 
   // Check authentication and subscription status
   const checkAuthAndSubscription = useCallback(async (retryCount = 0) => {
@@ -239,8 +240,12 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   // Check initial page access on mount
   useEffect(() => {
     if (!isCheckingAuth && !canAccessPage(initialPageIndex)) {
-      // If user tries to access restricted page directly, redirect to last free page
-      if (initialPageIndex >= FREE_PAGE_LIMIT) {
+      // If user tries to access page 5 directly, show modal but allow them to see it
+      if (initialPageIndex === FREE_PAGE_LIMIT) {
+        setShowSubscriptionDialog(true)
+        // Keep them on page 5 (index 4) so they can see it (blurred/locked)
+      } else if (initialPageIndex > FREE_PAGE_LIMIT) {
+        // For pages beyond 5, redirect to last free page
         const params = new URLSearchParams(searchParams.toString())
         params.set('page', FREE_PAGE_LIMIT.toString())
         router.replace(`/comics/read/${comic.id}?${params.toString()}`, { scroll: false })
@@ -263,26 +268,11 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   // Check if current page is restricted and show dialog if needed (for navigation methods)
   useEffect(() => {
     if (!isCheckingAuth && !canAccessPage(currentPage) && currentPage >= FREE_PAGE_LIMIT) {
+      // Show subscription dialog automatically when user reaches page 5 (index 4)
       setShowSubscriptionDialog(true)
-      // Scroll back to last accessible page
-      const lastFreePage = FREE_PAGE_LIMIT - 1
-      if (readingMode === 'vertical' && verticalContainerRef.current) {
-        const lastFreePageElement = verticalContainerRef.current.children[lastFreePage] as HTMLElement
-        if (lastFreePageElement) {
-          lastFreePageElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }
-      } else if (readingMode === 'horizontal' && horizontalContainerRef.current) {
-        const lastFreePageElement = horizontalContainerRef.current.children[lastFreePage] as HTMLElement
-        if (lastFreePageElement) {
-          lastFreePageElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-        }
-      }
-      // Use a timeout to prevent state update conflicts
-      setTimeout(() => {
-        setCurrentPage(lastFreePage)
-      }, 100)
+      // Don't scroll back or reset page - let user see the locked page 5
     }
-  }, [currentPage, canAccessPage, isCheckingAuth, readingMode])
+  }, [currentPage, canAccessPage, isCheckingAuth])
 
   // Scroll to current page based on reading mode
   useEffect(() => {
@@ -299,67 +289,64 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
     }
   }, [currentPage, readingMode])
 
-  // Detect scroll in vertical mode to automatically show dialog when viewing restricted page
+  // Use IntersectionObserver to detect when page 5 (5th picture) enters viewport
   useEffect(() => {
-    if (readingMode !== 'vertical' || !verticalContainerRef.current || isCheckingAuth) return
+    if (isCheckingAuth) return
 
-    const container = verticalContainerRef.current
-    let scrollTimeout: NodeJS.Timeout
-    let lastCheckedPage = currentPage
+    // Page 5 is at index 4 (0-based)
+    const page5Index = FREE_PAGE_LIMIT // index 4
+    
+    // Only observe page 5 if it exists and user can't access it
+    if (page5Index >= pages.length || canAccessPage(page5Index)) return
 
-    const handleScroll = () => {
-      // Debounce scroll events
-      clearTimeout(scrollTimeout)
-      scrollTimeout = setTimeout(() => {
-        // Find which page is currently most visible in viewport
-        const viewportHeight = window.innerHeight
-        const viewportCenter = viewportHeight / 2
-        
-        let mostVisiblePageIndex = 0
-        let maxVisibility = 0
+    let observer: IntersectionObserver | null = null
+    let timeoutId: NodeJS.Timeout | null = null
 
-        Array.from(container.children).forEach((child, index) => {
-          const childRect = child.getBoundingClientRect()
-          const childTop = childRect.top
-          const childBottom = childRect.bottom
-          const childHeight = childRect.height
-          
-          // Calculate how much of the page is visible in viewport
-          const visibleTop = Math.max(0, viewportCenter - childTop)
-          const visibleBottom = Math.max(0, childBottom - viewportCenter)
-          const visibility = Math.min(visibleTop, visibleBottom, childHeight / 2) / (childHeight / 2)
-          
-          if (visibility > maxVisibility) {
-            maxVisibility = visibility
-            mostVisiblePageIndex = index
-          }
-        })
+    // Wait for the page element to be available (refs are set after render)
+    const checkAndObserve = () => {
+      const page5Element = pageRefs.current[page5Index]
+      if (!page5Element) {
+        // Retry after a short delay if element not yet available
+        timeoutId = setTimeout(checkAndObserve, 100)
+        return
+      }
 
-        // If user scrolled to a restricted page and it's different from last checked, show dialog
-        if (
-          !canAccessPage(mostVisiblePageIndex) && 
-          mostVisiblePageIndex >= FREE_PAGE_LIMIT &&
-          mostVisiblePageIndex !== lastCheckedPage
-        ) {
-          lastCheckedPage = mostVisiblePageIndex
-          setShowSubscriptionDialog(true)
-          // Scroll back to last accessible page
-          const lastFreePage = FREE_PAGE_LIMIT - 1
-          const lastFreePageElement = container.children[lastFreePage] as HTMLElement
-          if (lastFreePageElement) {
-            lastFreePageElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            setCurrentPage(lastFreePage)
-          }
+      // Create IntersectionObserver to watch when page 5 enters viewport
+      observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            // When page 5 becomes visible (intersecting with viewport)
+            if (entry.isIntersecting && !canAccessPage(page5Index)) {
+              // Show modal immediately when 5th picture comes into view
+              setShowSubscriptionDialog(true)
+              // Update current page to reflect what user is viewing
+              setCurrentPage(page5Index)
+              currentPageRef.current = page5Index
+            }
+          })
+        },
+        {
+          // Trigger when at least 10% of the page is visible
+          threshold: 0.1,
+          // Use root margin to trigger slightly before page fully enters
+          rootMargin: '0px',
         }
-      }, 150) // Debounce delay
+      )
+
+      observer.observe(page5Element)
     }
 
-    container.addEventListener('scroll', handleScroll, { passive: true })
+    checkAndObserve()
+    
     return () => {
-      container.removeEventListener('scroll', handleScroll)
-      clearTimeout(scrollTimeout)
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      if (observer) {
+        observer.disconnect()
+      }
     }
-  }, [readingMode, canAccessPage, currentPage, isCheckingAuth])
+  }, [isCheckingAuth, canAccessPage, pages.length, readingMode])
 
   // Hide controls after inactivity
   useEffect(() => {
@@ -583,9 +570,16 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
           >
             {pages.map((page, index) => {
               const isLocked = !canAccessPage(index)
+              // Initialize pageRefs array if needed
+              if (!pageRefs.current[index]) {
+                pageRefs.current[index] = null
+              }
               return (
                 <div
                   key={page.id}
+                  ref={(el) => {
+                    pageRefs.current[index] = el
+                  }}
                   className={`relative w-full max-w-4xl transition-opacity ${
                     index === currentPage ? 'opacity-100' : 'opacity-60'
                   } ${isLocked ? 'blur-sm' : ''}`}
@@ -646,9 +640,16 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
           >
             {pages.map((page, index) => {
               const isLocked = !canAccessPage(index)
+              // Initialize pageRefs array if needed
+              if (!pageRefs.current[index]) {
+                pageRefs.current[index] = null
+              }
               return (
                 <div
                   key={page.id}
+                  ref={(el) => {
+                    pageRefs.current[index] = el
+                  }}
                   className={`relative flex-shrink-0 transition-opacity ${
                     index === currentPage ? 'opacity-100' : 'opacity-60'
                   } ${isLocked ? 'blur-sm' : ''}`}
