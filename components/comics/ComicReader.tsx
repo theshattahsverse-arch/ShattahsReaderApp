@@ -14,9 +14,12 @@ import {
   Minimize,
   LayoutGrid,
   LayoutList,
+  MessageSquare,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { SubscriptionGateDialog } from './SubscriptionGateDialog'
+import { PageComments } from './PageComments'
+import { CommentSidebar } from './CommentSidebar'
 import type { Comic } from '@/types/database'
 
 interface PageWithUrl {
@@ -47,6 +50,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false)
+  const [showCommentSidebar, setShowCommentSidebar] = useState(false)
   const horizontalContainerRef = useRef<HTMLDivElement>(null)
   const verticalContainerRef = useRef<HTMLDivElement>(null)
   const currentPageRef = useRef(currentPage)
@@ -382,6 +386,19 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
     }
   }
 
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!document.fullscreenElement
+      setIsFullscreen(isCurrentlyFullscreen)
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    }
+  }, [])
+
   const toggleReadingMode = () => {
     setReadingMode((prev) => (prev === 'vertical' ? 'horizontal' : 'vertical'))
   }
@@ -416,6 +433,18 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
       setShowSubscriptionDialog(true)
     }
   }
+
+  const navigateToPageById = useCallback((pageId: string) => {
+    const pageIndex = pages.findIndex(page => page.id === pageId)
+    if (pageIndex !== -1) {
+      if (canAccessPage(pageIndex)) {
+        setCurrentPage(pageIndex)
+        setImageError(false)
+      } else {
+        setShowSubscriptionDialog(true)
+      }
+    }
+  }, [pages, canAccessPage])
 
   const handlePageClick = (pageIndex: number, e?: React.MouseEvent) => {
     // Stop event propagation to prevent parent onClick from firing
@@ -509,6 +538,15 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
 
           {/* Right controls */}
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowCommentSidebar(true)}
+              className="text-white hover:bg-white/10"
+              title="View all comments"
+            >
+              <MessageSquare className="h-5 w-5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -611,6 +649,14 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
                           }
                         }}
                       />
+                      {/* Page Comments Overlay */}
+                      {!isFullscreen && !isLocked && (
+                        <PageComments
+                          comicId={comic.id}
+                          pageId={page.id}
+                          pageNumber={index + 1}
+                        />
+                      )}
                       {isLocked && (
                         <div 
                           className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg cursor-pointer z-10"
@@ -681,6 +727,14 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
                           }
                         }}
                       />
+                      {/* Page Comments Overlay */}
+                      {!isFullscreen && !isLocked && (
+                        <PageComments
+                          comicId={comic.id}
+                          pageId={page.id}
+                          pageNumber={index + 1}
+                        />
+                      )}
                       {isLocked && (
                         <div 
                           className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg cursor-pointer z-10"
@@ -710,19 +764,34 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
         currentUrl={`/comics/read/${comic.id}?page=${currentPage + 2}`}
       />
 
+      {/* Comment Sidebar */}
+      <CommentSidebar
+        comicId={comic.id}
+        currentPageId={currentPageData?.id || null}
+        currentPageNumber={currentPage + 1}
+        isVisible={showCommentSidebar}
+        onClose={() => setShowCommentSidebar(false)}
+        onNavigateToPage={navigateToPageById}
+      />
+
+      {/* Vertical Progress bar */}
+      <div
+        className={`fixed right-0 top-0 bottom-0 w-1 bg-white/20 z-40 transition-opacity duration-300 ${
+          showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <div
+          className="w-full bg-amber transition-all duration-300"
+          style={{ height: `${progressPercentage}%` }}
+        />
+      </div>
+
       {/* Bottom Controls */}
       <div
         className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/90 to-transparent transition-opacity duration-300 ${
           showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
-        {/* Progress bar */}
-        {/* <div className="h-1 w-full bg-white/20">
-          <div
-            className="h-full bg-amber transition-all duration-300"
-            style={{ width: `${progressPercentage}%` }}
-          />
-        </div> */}
 
         <div className="flex items-center justify-between px-4 py-3">
           {/* Page navigation */}
