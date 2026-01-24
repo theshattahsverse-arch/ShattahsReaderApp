@@ -99,8 +99,8 @@ export function SubscriptionGateDialog({
           </div>
           <DialogTitle className="text-center text-2xl font-bold">
             {showSubscribe
-              ? 'Unlock Full Access'
-              : 'Sign In to Continue Reading'}
+              ? 'Become a Shattahs Member for exclusive Access'
+              : 'Join the Shattahsverse'}
           </DialogTitle>
           <DialogDescription className="text-center text-base mt-2">
             {showSubscribe ? (
