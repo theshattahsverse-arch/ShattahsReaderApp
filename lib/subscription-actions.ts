@@ -11,6 +11,9 @@ interface UpdateSubscriptionParams {
   paystackCustomerCode?: string
   paystackSubscriptionCode?: string
   paystackTransactionRef?: string
+  paypalOrderId?: string
+  paypalSubscriptionId?: string
+  paymentProvider?: 'paystack' | 'paypal'
 }
 
 /**
@@ -26,6 +29,9 @@ export async function updateUserSubscription(params: UpdateSubscriptionParams) {
     paystack_customer_code: params.paystackCustomerCode || null,
     paystack_subscription_code: params.paystackSubscriptionCode || null,
     paystack_transaction_ref: params.paystackTransactionRef || null,
+    paypal_order_id: params.paypalOrderId || null,
+    paypal_subscription_id: params.paypalSubscriptionId || null,
+    payment_provider: params.paymentProvider || null,
     updated_at: new Date().toISOString(),
   }
 
@@ -50,7 +56,7 @@ export async function getUserSubscription(userId: string) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('subscription_tier, subscription_status, subscription_end_date, paystack_customer_code, paystack_subscription_code, paystack_transaction_ref')
+    .select('subscription_tier, subscription_status, subscription_end_date, paystack_customer_code, paystack_subscription_code, paystack_transaction_ref, paypal_order_id, paypal_subscription_id, payment_provider')
     .eq('id', userId)
     .single()
 
@@ -116,21 +122,5 @@ export function calculateSubscriptionEndDate(planType: 'member' | 'daypass'): Da
   return now
 }
 
-/**
- * Get plan details 
- */
-export function getPlanDetails(planName: string) {
-  const plans: Record<string, { amount: number; tier: SubscriptionTier; interval?: string }> = {
-    'Shattahs Member': {
-      amount: 200000, // ₦2,000 in kobo (2000 * 100)
-      tier: 'member',
-      interval: 'weekly',
-    },
-    'Day Pass': {
-      amount: 500000, // ₦5,000 in kobo (5000 * 100)
-      tier: 'daypass',
-    },
-  }
-
-  return plans[planName] || null
-}
+// Re-export client-safe utilities for server-side use
+export { getPlanDetails, formatPrice } from '@/lib/subscription-utils'

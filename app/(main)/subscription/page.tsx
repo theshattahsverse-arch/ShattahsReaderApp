@@ -8,52 +8,133 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge'
 import { Check, Crown, Zap, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { detectCountryClient } from '@/lib/geo-location'
+import { getPlanDetails, formatPrice } from '@/lib/subscription-utils'
 
-const plans = [
-  {
-    name: 'Shattahs Member',
-    description: 'Become an Exclusive Shattahs Member',
-    price: '₦2000',
-    period: 'per week',
-    features: [
-      'Access to competition rewards',
-      'Exclusive collector editions',
-      'Behind-the-scenes content',
-      'Early access to new releases',
-      'Merchandise discounts',
-      'Early beta features',
-      'VIP community access',
-    ],
-    limitations: [],
-    cta: 'Subscribe Now',
-    popular: true,
-    icon: Crown,
-  },
-  {
-    name: 'Day Pass',
-    description: 'Grab a Day Pass',
-    price: '₦5000',
-    period: 'One Time',
-    features: [
-      'Current comic unlocked',
-      'No subscription',
-      'No comment access',
-      'HD quality images',
-      'Unable to Post Comments',
-      'Reading progress',
-      'Priority support',
-    ],
-    limitations: [],
-    cta: 'Day Pass',
-    popular: false,
-    icon: Zap,
-  },
-]
+interface Plan {
+  name: string
+  description: string
+  price: string
+  period: string
+  features: string[]
+  limitations: string[]
+  cta: string
+  popular: boolean
+  icon: typeof Crown
+}
 
 function SubscriptionContent() {
   const [loading, setLoading] = useState<string | null>(null)
+  const [plans, setPlans] = useState<Plan[]>([])
+  const [isDetectingCountry, setIsDetectingCountry] = useState(true)
   const searchParams = useSearchParams()
   const router = useRouter()
+
+  // Detect country and set prices on mount
+  useEffect(() => {
+    const detectCountry = async () => {
+      try {
+        setIsDetectingCountry(true)
+        const geoResult = await detectCountryClient()
+        console.log('Detected country:', geoResult.countryCode)
+        const isNigeria = geoResult.isNigeria
+
+        // Get plan details based on country
+        const memberPlan = getPlanDetails('Shattahs Member', isNigeria)
+        const dayPassPlan = getPlanDetails('Day Pass', isNigeria)
+
+        const updatedPlans: Plan[] = [
+          {
+            name: 'Shattahs Member',
+            description: 'Become an Exclusive Shattahs Member',
+            price: memberPlan ? formatPrice(memberPlan.amount, memberPlan.currency) : (isNigeria ? '₦2000' : '$1.99'),
+            period: 'per week',
+            features: [
+              'Access to competition rewards',
+              'Exclusive collector editions',
+              'Behind-the-scenes content',
+              'Early access to new releases',
+              'Merchandise discounts',
+              'Early beta features',
+              'VIP community access',
+            ],
+            limitations: [],
+            cta: 'Subscribe Now',
+            popular: true,
+            icon: Crown,
+          },
+          {
+            name: 'Day Pass',
+            description: 'Grab a Day Pass',
+            price: dayPassPlan ? formatPrice(dayPassPlan.amount, dayPassPlan.currency) : (isNigeria ? '₦5000' : '$4.99'),
+            period: 'One Time',
+            features: [
+              'Current comic unlocked',
+              'No subscription',
+              'No comment access',
+              'HD quality images',
+              'Unable to Post Comments',
+              'Reading progress',
+              'Priority support',
+            ],
+            limitations: [],
+            cta: 'Day Pass',
+            popular: false,
+            icon: Zap,
+          },
+        ]
+
+        setPlans(updatedPlans)
+      } catch (error) {
+        console.error('Error detecting country:', error)
+        // Default to Nigerian prices on error
+        setPlans([
+          {
+            name: 'Shattahs Member',
+            description: 'Become an Exclusive Shattahs Member',
+            price: '₦2000',
+            period: 'per week',
+            features: [
+              'Access to competition rewards',
+              'Exclusive collector editions',
+              'Behind-the-scenes content',
+              'Early access to new releases',
+              'Merchandise discounts',
+              'Early beta features',
+              'VIP community access',
+            ],
+            limitations: [],
+            cta: 'Subscribe Now',
+            popular: true,
+            icon: Crown,
+          },
+          {
+            name: 'Day Pass',
+            description: 'Grab a Day Pass',
+            price: '₦5000',
+            period: 'One Time',
+            features: [
+              'Current comic unlocked',
+              'No subscription',
+              'No comment access',
+              'HD quality images',
+              'Unable to Post Comments',
+              'Reading progress',
+              'Priority support',
+            ],
+            limitations: [],
+            cta: 'Day Pass',
+            popular: false,
+            icon: Zap,
+          },
+        ])
+      } finally {
+        setIsDetectingCountry(false)
+      }
+    }
+
+    detectCountry()
+  }, [])
 
   useEffect(() => {
     // Handle success/error messages from URL params
@@ -96,9 +177,13 @@ function SubscriptionContent() {
         throw new Error(data.error || 'Failed to initialize payment')
       }
 
-      // Redirect to Paystack payment page
+      // Redirect to payment page (Paystack or PayPal)
       if (data.authorization_url) {
+        // Paystack payment URL
         window.location.href = data.authorization_url
+      } else if (data.approval_url) {
+        // PayPal approval URL
+        window.location.href = data.approval_url
       } else if (data.subscription_code) {
         // For subscriptions, Paystack will send an email
         // But we can also redirect if there's an authorization URL
@@ -142,8 +227,13 @@ function SubscriptionContent() {
 
       {/* Pricing Cards */}
       <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+        {isDetectingCountry && (
+          <div className="flex justify-center mb-8">
+            <Loader2 className="h-6 w-6 animate-spin text-amber" />
+          </div>
+        )}
         <div className="flex flex-wrap justify-center gap-8">
-          {plans.map((plan) => (
+          {plans.length > 0 && plans.map((plan) => (
             <Card
               key={plan.name}
               className={`relative flex flex-col w-full max-w-sm ${
@@ -229,7 +319,7 @@ function SubscriptionContent() {
               },
               {
                 q: 'What payment methods do you accept?',
-                a: 'We accept all major credit cards and bank transfers through Paystack, our secure payment processor.',
+                a: 'We accept all major credit cards and bank transfers. Nigerian users can pay via Paystack, while international users can pay via PayPal.',
               },
               {
                 q: 'Can I switch between plans?',
