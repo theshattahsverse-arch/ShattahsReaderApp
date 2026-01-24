@@ -118,10 +118,10 @@ export function SubscriptionGateDialog({
             ) : (
               <div className="space-y-2">
                 <p className="text-muted-foreground">
-                  Sign in to continue reading this comic and access all pages.
+                  Become a Shattahs member! Sign in to continue reading.
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Or get a Day Pass to access all pages for 24 hours without signing in.
+                  Or get a One Time Day Pass to access the remaining pages.
                 </p>
               </div>
             )}
