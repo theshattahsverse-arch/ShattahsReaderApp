@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { paystackClient } from '@/lib/paystack'
 import { updateUserSubscription, calculateSubscriptionEndDate } from '@/lib/subscription-actions'
 import { createClient } from '@/lib/supabase/server'
+import { createAnonymousDayPass } from '@/lib/anonymous-daypass'
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,11 +62,24 @@ async function handleChargeSuccess(data: any) {
   try {
     const metadata = data.metadata || {}
     const userId = metadata.user_id
+    const sessionId = metadata.session_id
+    const isAnonymous = metadata.is_anonymous === 'true'
     const planType = metadata.plan_type
     const planName = metadata.plan_name
 
+    // Handle anonymous Day Pass purchase
+    if (isAnonymous && sessionId && planType === 'daypass') {
+      await createAnonymousDayPass({
+        sessionId,
+        paymentProvider: 'paystack',
+        transactionRef: data.reference,
+      })
+      return
+    }
+
+    // Handle authenticated user purchases
     if (!userId) {
-      console.error('No user_id in charge.success metadata')
+      console.error('No user_id or session_id in charge.success metadata')
       return
     }
 

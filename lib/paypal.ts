@@ -113,7 +113,7 @@ class PayPalClient {
               currency_code: currency,
               value: amount.toFixed(2),
             },
-            custom_id: metadata?.user_id || '',
+            custom_id: metadata ? JSON.stringify(metadata) : (metadata?.user_id || ''),
             description: metadata?.plan_name || 'Subscription Payment',
           },
         ],

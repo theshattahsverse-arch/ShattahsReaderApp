@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { paypalClient } from '@/lib/paypal'
 import { updateUserSubscription, calculateSubscriptionEndDate } from '@/lib/subscription-actions'
 import { createClient } from '@/lib/supabase/server'
+import { createAnonymousDayPass } from '@/lib/anonymous-daypass'
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,24 +68,60 @@ export async function POST(request: NextRequest) {
 
 async function handlePaymentCaptureCompleted(resource: any) {
   try {
-    const customId = resource.custom_id || resource.purchase_units?.[0]?.custom_id
-    if (!customId) {
-      console.error('No custom_id in PAYMENT.CAPTURE.COMPLETED')
+    const orderId = resource.id || resource.order_id
+    const purchaseUnit = resource.purchase_units?.[0]
+    const customId = resource.custom_id || purchaseUnit?.custom_id
+    
+    // Try to get metadata from purchase unit or resource
+    let metadata: any = {}
+    if (customId) {
+      try {
+        metadata = JSON.parse(customId)
+      } catch {
+        // If custom_id is not JSON, it might be a plain user_id
+        metadata = { user_id: customId }
+      }
+    }
+    const sessionId = metadata.session_id
+    const isAnonymous = metadata.is_anonymous === 'true'
+    const userId = metadata.user_id
+
+    // Handle anonymous Day Pass purchase
+    if (isAnonymous && sessionId && orderId) {
+      await createAnonymousDayPass({
+        sessionId,
+        paymentProvider: 'paypal',
+        transactionRef: orderId,
+      })
       return
     }
 
-    // Extract user_id from custom_id (format: user_id or stored separately)
-    // For now, we'll need to store the mapping or extract from order metadata
-    const orderId = resource.id || resource.order_id
+    // Handle authenticated user purchases
+    if (!userId && !orderId) {
+      console.error('No user_id or order_id in PAYMENT.CAPTURE.COMPLETED')
+      return
+    }
 
     const supabase = await createClient()
 
-    // Find user by PayPal order ID
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, subscription_tier')
-      .eq('paypal_order_id', orderId)
-      .single()
+    let profile = null
+    if (userId) {
+      // Find user by user_id from metadata
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, subscription_tier')
+        .eq('id', userId)
+        .single()
+      profile = data
+    } else if (orderId) {
+      // Find user by PayPal order ID
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, subscription_tier')
+        .eq('paypal_order_id', orderId)
+        .single()
+      profile = data
+    }
 
     if (!profile) {
       console.error('User not found for PayPal order ID:', orderId)

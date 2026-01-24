@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { paypalClient } from '@/lib/paypal'
 import { updateUserSubscription, calculateSubscriptionEndDate } from '@/lib/subscription-actions'
+import { createAnonymousDayPass, setSessionIdCookie } from '@/lib/anonymous-daypass'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,19 +11,16 @@ export async function GET(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-
     const searchParams = request.nextUrl.searchParams
     const token = searchParams.get('token')
     const plan = searchParams.get('plan')
     const userId = searchParams.get('userId')
+    const sessionId = searchParams.get('sessionId')
     const subscriptionId = searchParams.get('subscription_id') || searchParams.get('ba_token')
     const orderId = searchParams.get('order_id') || searchParams.get('token')
 
-    // Verify userId matches authenticated user
-    if (userId && userId !== user.id) {
+    // Verify userId matches authenticated user (if provided)
+    if (userId && user && userId !== user.id) {
       return NextResponse.redirect(
         new URL('/subscription?error=unauthorized', request.url)
       )
@@ -37,6 +35,45 @@ export async function GET(request: NextRequest) {
     // Determine subscription tier
     let tier: 'member' | 'daypass' = plan === 'Day Pass' ? 'daypass' : 'member'
     const endDate = calculateSubscriptionEndDate(tier)
+
+    // Handle anonymous Day Pass purchase
+    if (tier === 'daypass' && orderId && sessionId && !user) {
+      try {
+        // Capture the order to complete the payment
+        const captureResult = await paypalClient.captureOrder(orderId)
+
+        if (captureResult.status !== 'COMPLETED') {
+          return NextResponse.redirect(
+            new URL('/subscription?error=payment_failed', request.url)
+          )
+        }
+
+        // Create anonymous Day Pass record
+        await createAnonymousDayPass({
+          sessionId,
+          paymentProvider: 'paypal',
+          transactionRef: orderId,
+        })
+
+        // Get redirect URL from query params or default to subscription page
+        const redirectUrl = searchParams.get('redirect_url') || `/subscription?success=true&plan=${encodeURIComponent(plan)}&anonymous=true`
+
+        // Set session ID cookie and redirect
+        const response = NextResponse.redirect(new URL(redirectUrl, request.url))
+        setSessionIdCookie(sessionId, response)
+        return response
+      } catch (error: any) {
+        console.error('PayPal order capture error:', error)
+        return NextResponse.redirect(
+          new URL('/subscription?error=verification_failed', request.url)
+        )
+      }
+    }
+
+    // Handle authenticated user purchases
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
 
     if (tier === 'daypass' && orderId) {
       // Handle one-time payment (Day Pass)

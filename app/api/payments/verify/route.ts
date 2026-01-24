@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { paystackClient } from '@/lib/paystack'
 import { updateUserSubscription, calculateSubscriptionEndDate } from '@/lib/subscription-actions'
+import { createAnonymousDayPass, setSessionIdCookie, getSessionIdFromCookie } from '@/lib/anonymous-daypass'
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,10 +10,6 @@ export async function GET(request: NextRequest) {
     const {
       data: { user },
     } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
 
     const searchParams = request.nextUrl.searchParams
     const reference = searchParams.get('reference')
@@ -37,11 +34,36 @@ export async function GET(request: NextRequest) {
     const metadata = transaction.metadata || {}
     const planName = metadata.plan_name
     const planType = metadata.plan_type
+    const sessionId = metadata.session_id
+    const isAnonymous = metadata.is_anonymous === 'true'
 
     if (!planName || !planType) {
       return NextResponse.redirect(
         new URL('/subscription?error=invalid_metadata', request.url)
       )
+    }
+
+    // Handle anonymous Day Pass purchase
+    if (isAnonymous && sessionId && planType === 'daypass') {
+      // Create anonymous Day Pass record
+      await createAnonymousDayPass({
+        sessionId,
+        paymentProvider: 'paystack',
+        transactionRef,
+      })
+
+      // Get redirect URL from metadata or default to subscription page
+      const redirectUrl = metadata.redirect_url || '/subscription?success=true&plan=' + encodeURIComponent(planName) + '&anonymous=true'
+      
+      // Set session ID cookie
+      const response = NextResponse.redirect(new URL(redirectUrl, request.url))
+      setSessionIdCookie(sessionId, response)
+      return response
+    }
+
+    // Handle authenticated user purchases
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url))
     }
 
     // Determine subscription tier and end date
