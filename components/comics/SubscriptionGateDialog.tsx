@@ -111,7 +111,7 @@ export function SubscriptionGateDialog({
                 <div className="flex items-center justify-center gap-2 pt-2">
                   <Sparkles className="h-4 w-4 text-amber" />
                   <span className="text-sm font-medium text-amber">
-                    Get unlimited access to all comics
+                    Get unlimited access to all exclusive Shattahs content.
                   </span>
                 </div>
               </div>
