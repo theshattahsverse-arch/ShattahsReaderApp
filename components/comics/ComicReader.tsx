@@ -71,8 +71,18 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
       if (!user) {
         const { data: { user: userData }, error: userError } = await supabase.auth.getUser()
         if (userError || !userData) {
+          // User is not authenticated - check for anonymous Day Pass
           setIsAuthenticated(false)
-          setHasActiveSubscription(false)
+          try {
+            const response = await fetch('/api/subscription/check-anonymous', {
+              credentials: 'include', // Include cookies in the request
+            })
+            const data = await response.json()
+            setHasActiveSubscription(data.hasActiveDayPass || false)
+          } catch (error) {
+            console.error('Error checking anonymous Day Pass:', error)
+            setHasActiveSubscription(false)
+          }
           setIsCheckingAuth(false)
           return
         }
@@ -80,8 +90,18 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
       }
       
       if (!user) {
+        // User is not authenticated - check for anonymous Day Pass
         setIsAuthenticated(false)
-        setHasActiveSubscription(false)
+        try {
+          const response = await fetch('/api/subscription/check-anonymous', {
+            credentials: 'include', // Include cookies in the request
+          })
+          const data = await response.json()
+          setHasActiveSubscription(data.hasActiveDayPass || false)
+        } catch (error) {
+          console.error('Error checking anonymous Day Pass:', error)
+          setHasActiveSubscription(false)
+        }
         setIsCheckingAuth(false)
         return
       }
@@ -131,6 +151,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
     checkAuthAndSubscription()
 
     // Also check after delays to catch cases where cookies are still being set after redirect
+    // This is especially important for anonymous Day Pass after payment redirect
     const delayedCheck1 = setTimeout(() => {
       checkAuthAndSubscription()
     }, 500)
@@ -138,6 +159,11 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
     const delayedCheck2 = setTimeout(() => {
       checkAuthAndSubscription()
     }, 1500)
+
+    // Additional check after 3 seconds for payment redirects
+    const delayedCheck3 = setTimeout(() => {
+      checkAuthAndSubscription()
+    }, 3000)
 
     // Listen for auth state changes
     const supabase = createClient()
@@ -171,6 +197,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
     return () => {
       clearTimeout(delayedCheck1)
       clearTimeout(delayedCheck2)
+      clearTimeout(delayedCheck3)
       subscription.unsubscribe()
       window.removeEventListener('focus', handleFocus)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
@@ -194,9 +221,11 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
     if (pageIndex < FREE_PAGE_LIMIT) {
       return true
     }
-    // For pages beyond free limit, require authentication and active subscription
-    return isAuthenticated && hasActiveSubscription
-  }, [isAuthenticated, hasActiveSubscription])
+    // For pages beyond free limit, require either:
+    // 1. Authentication with active subscription, OR
+    // 2. Active anonymous Day Pass (hasActiveSubscription can be true even without authentication)
+    return hasActiveSubscription
+  }, [hasActiveSubscription])
 
   // Keep refs in sync with state
   useEffect(() => {

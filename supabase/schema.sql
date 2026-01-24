@@ -131,6 +131,22 @@ CREATE TABLE IF NOT EXISTS public.user_reading_progress (
 );
 
 -- ============================================================================
+-- ANONYMOUS DAY PASS TABLE
+-- ============================================================================
+-- Track Day Pass purchases for unauthenticated users using session IDs
+
+CREATE TABLE IF NOT EXISTS public.anonymous_daypass (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id TEXT UNIQUE NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  payment_provider TEXT NOT NULL CHECK (payment_provider IN ('paystack', 'paypal')),
+  transaction_ref TEXT,
+  user_id UUID REFERENCES public.profiles ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================================================
 -- INDEXES FOR PERFORMANCE
 -- ============================================================================
 
@@ -165,6 +181,11 @@ CREATE INDEX IF NOT EXISTS idx_user_reading_progress_user_id ON public.user_read
 CREATE INDEX IF NOT EXISTS idx_user_reading_progress_comic_id ON public.user_reading_progress(comic_id);
 CREATE INDEX IF NOT EXISTS idx_user_reading_progress_page_id ON public.user_reading_progress(page_id);
 
+-- Anonymous Day Pass indexes
+CREATE INDEX IF NOT EXISTS idx_anonymous_daypass_session_id ON public.anonymous_daypass(session_id);
+CREATE INDEX IF NOT EXISTS idx_anonymous_daypass_expires_at ON public.anonymous_daypass(expires_at);
+CREATE INDEX IF NOT EXISTS idx_anonymous_daypass_user_id ON public.anonymous_daypass(user_id) WHERE user_id IS NOT NULL;
+
 -- ============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ============================================================================
@@ -176,6 +197,7 @@ ALTER TABLE public.comic_pages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comic_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_reading_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.anonymous_daypass ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies if they exist (for clean re-runs)
 DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
@@ -193,6 +215,9 @@ DROP POLICY IF EXISTS "Users can delete their own comments" ON public.comic_comm
 DROP POLICY IF EXISTS "Users can view their own reading progress" ON public.user_reading_progress;
 DROP POLICY IF EXISTS "Users can insert their own reading progress" ON public.user_reading_progress;
 DROP POLICY IF EXISTS "Users can update their own reading progress" ON public.user_reading_progress;
+DROP POLICY IF EXISTS "Anonymous Day Pass is viewable by everyone" ON public.anonymous_daypass;
+DROP POLICY IF EXISTS "Anonymous Day Pass can be inserted by anyone" ON public.anonymous_daypass;
+DROP POLICY IF EXISTS "Anonymous Day Pass can be updated by anyone" ON public.anonymous_daypass;
 
 -- Profiles policies
 CREATE POLICY "Public profiles are viewable by everyone"
@@ -259,6 +284,19 @@ CREATE POLICY "Users can insert their own reading progress"
 CREATE POLICY "Users can update their own reading progress"
   ON public.user_reading_progress FOR UPDATE
   USING (auth.uid() = user_id);
+
+-- Anonymous Day Pass policies (public read/write for anonymous purchases)
+CREATE POLICY "Anonymous Day Pass is viewable by everyone"
+  ON public.anonymous_daypass FOR SELECT
+  USING (true);
+
+CREATE POLICY "Anonymous Day Pass can be inserted by anyone"
+  ON public.anonymous_daypass FOR INSERT
+  WITH CHECK (true);
+
+CREATE POLICY "Anonymous Day Pass can be updated by anyone"
+  ON public.anonymous_daypass FOR UPDATE
+  USING (true);
 
 -- ============================================================================
 -- TRIGGERS
@@ -351,6 +389,13 @@ CREATE TRIGGER update_page_count_on_delete
   AFTER DELETE ON public.comic_pages
   FOR EACH ROW
   EXECUTE FUNCTION public.update_comic_page_count();
+
+-- Apply updated_at trigger to anonymous_daypass
+DROP TRIGGER IF EXISTS update_anonymous_daypass_updated_at ON public.anonymous_daypass;
+CREATE TRIGGER update_anonymous_daypass_updated_at
+  BEFORE UPDATE ON public.anonymous_daypass
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at_column();
 
 -- ============================================================================
 -- STORAGE BUCKET POLICIES

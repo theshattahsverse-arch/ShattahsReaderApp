@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,7 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Lock, LogIn, Crown, Sparkles } from 'lucide-react'
+import { Lock, LogIn, Crown, Sparkles, Zap, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface SubscriptionGateDialogProps {
   open: boolean
@@ -28,6 +30,7 @@ export function SubscriptionGateDialog({
   currentUrl,
 }: SubscriptionGateDialogProps) {
   const router = useRouter()
+  const [isLoadingDayPass, setIsLoadingDayPass] = useState(false)
 
   const handleLogin = () => {
     const loginUrl = currentUrl
@@ -38,6 +41,45 @@ export function SubscriptionGateDialog({
 
   const handleSubscribe = () => {
     router.push('/subscription')
+  }
+
+  const handleDayPassPurchase = async () => {
+    try {
+      setIsLoadingDayPass(true)
+      
+      const response = await fetch('/api/payments/initialize-anonymous', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          planName: 'Day Pass',
+          redirectUrl: currentUrl || window.location.href,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to initialize payment')
+      }
+
+      const data = await response.json()
+      
+      // Redirect to payment URL
+      if (data.authorization_url) {
+        // Paystack
+        window.location.href = data.authorization_url
+      } else if (data.approval_url) {
+        // PayPal
+        window.location.href = data.approval_url
+      } else {
+        throw new Error('No payment URL received')
+      }
+    } catch (error: any) {
+      console.error('Day Pass purchase error:', error)
+      toast.error(error.message || 'Failed to initialize Day Pass payment')
+      setIsLoadingDayPass(false)
+    }
   }
 
   // Determine what to show based on authentication and subscription status
@@ -74,9 +116,14 @@ export function SubscriptionGateDialog({
                 </div>
               </div>
             ) : (
-              <p className="text-muted-foreground">
-                Sign in to continue reading this comic and access all pages.
-              </p>
+              <div className="space-y-2">
+                <p className="text-muted-foreground">
+                  Sign in to continue reading this comic and access all pages.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Or get a Day Pass to access all pages for 24 hours without signing in.
+                </p>
+              </div>
             )}
           </DialogDescription>
         </DialogHeader>
@@ -90,13 +137,33 @@ export function SubscriptionGateDialog({
               Subscribe Now
             </Button>
           ) : showLogin ? (
-            <Button
-              onClick={handleLogin}
-              className="w-full sm:w-auto bg-gradient-to-r from-amber to-amber/90 hover:from-amber/90 hover:to-amber text-background font-semibold px-8 py-6 text-lg shadow-lg shadow-amber/20"
-            >
-              <LogIn className="mr-2 h-5 w-5" />
-              Sign In
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <Button
+                onClick={handleDayPassPurchase}
+                disabled={isLoadingDayPass}
+                className="w-full sm:w-auto bg-gradient-to-r from-amber to-amber/90 hover:from-amber/90 hover:to-amber text-background font-semibold px-8 py-6 text-lg shadow-lg shadow-amber/20"
+              >
+                {isLoadingDayPass ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="mr-2 h-5 w-5" />
+                    Day Pass
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={handleLogin}
+                variant="outline"
+                className="w-full sm:w-auto border-amber/30 text-amber hover:bg-amber/10 font-semibold px-8 py-6 text-lg"
+              >
+                <LogIn className="mr-2 h-5 w-5" />
+                Sign In
+              </Button>
+            </div>
           ) : null}
         </DialogFooter>
       </DialogContent>
