@@ -717,12 +717,12 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
         }`}
       >
         {/* Progress bar */}
-        <div className="h-1 w-full bg-white/20">
+        {/* <div className="h-1 w-full bg-white/20">
           <div
             className="h-full bg-amber transition-all duration-300"
             style={{ width: `${progressPercentage}%` }}
           />
-        </div>
+        </div> */}
 
         <div className="flex items-center justify-between px-4 py-3">
           {/* Page navigation */}
