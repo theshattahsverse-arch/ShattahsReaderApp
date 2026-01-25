@@ -258,5 +258,6 @@ export interface CommentWithUser {
     full_name: string | null
     avatar_url: string | null
     email: string | null
+    platform: string | null
   }
 }

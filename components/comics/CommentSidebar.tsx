@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { MessageSquare, Send, Edit2, Trash2, X } from 'lucide-react'
 import type { CommentWithUser } from '@/types/database'
 import Link from 'next/link'
+import { PlatformIcon } from '@/components/ui/platform-icon'
 
 interface CommentSidebarProps {
   comicId: string
@@ -416,10 +417,14 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
                     <div className="flex items-start gap-3">
                       <Avatar className="h-8 w-8 border border-white/20">
                         <AvatarImage src={comment.user.avatar_url || undefined} />
-                        <AvatarFallback className="bg-amber/20 text-amber text-xs">
-                          {comment.user.full_name?.charAt(0)?.toUpperCase() ||
+                        <AvatarFallback className="bg-amber/20 text-amber text-xs flex items-center justify-center">
+                          {comment.user.platform && (comment.user.platform === 'google' || comment.user.platform === 'facebook') ? (
+                            <PlatformIcon platform={comment.user.platform} className="h-5 w-5" />
+                          ) : (
+                            comment.user.full_name?.charAt(0)?.toUpperCase() ||
                             comment.user.email?.charAt(0)?.toUpperCase() ||
-                            'U'}
+                            'U'
+                          )}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">

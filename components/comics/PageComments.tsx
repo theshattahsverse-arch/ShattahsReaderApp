@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Send } from 'lucide-react'
 import type { CommentWithUser } from '@/types/database'
 import Link from 'next/link'
+import { PlatformIcon } from '@/components/ui/platform-icon'
 
 interface PageCommentsProps {
   comicId: string
@@ -236,6 +237,18 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
     const contentToSubmit = commentContent.trim()
     setIsSubmitting(true)
     
+    // Get platform from user identities
+    const identities = (user as any).identities || []
+    const provider = identities.length > 0 ? identities[0]?.provider : null
+    let platform: string | null = null
+    if (provider === 'google') {
+      platform = 'google'
+    } else if (provider === 'facebook') {
+      platform = 'facebook'
+    } else if (provider === 'email') {
+      platform = 'email'
+    }
+
     // Optimistic update - add comment immediately to local state
     const optimisticComment: CommentWithUser = {
       id: `temp-${Date.now()}`,
@@ -252,6 +265,7 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
         full_name: user.user_metadata?.full_name || null,
         avatar_url: user.user_metadata?.avatar_url || null,
         email: user.email || null,
+        platform,
       },
     }
     
@@ -362,10 +376,14 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
                   <div className="flex items-start gap-2 h-full">
                     <Avatar className="h-8 w-8 border-2 border-amber/50 flex-shrink-0 shadow-md">
                       <AvatarImage src={comment.user.avatar_url || undefined} />
-                      <AvatarFallback className="bg-amber/50 text-amber font-bold text-sm">
-                        {comment.user.full_name?.charAt(0)?.toUpperCase() ||
+                      <AvatarFallback className="bg-amber/50 text-amber font-bold text-sm flex items-center justify-center">
+                        {comment.user.platform && (comment.user.platform === 'google' || comment.user.platform === 'facebook') ? (
+                          <PlatformIcon platform={comment.user.platform} className="h-5 w-5" />
+                        ) : (
+                          comment.user.full_name?.charAt(0)?.toUpperCase() ||
                           comment.user.email?.charAt(0)?.toUpperCase() ||
-                          'U'}
+                          'U'
+                        )}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0 flex flex-col">

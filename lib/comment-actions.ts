@@ -21,7 +21,8 @@ export async function getComicComments(
           id,
           full_name,
           avatar_url,
-          email
+          email,
+          platform
         )
       `)
       .eq('comic_id', comicId)
@@ -56,6 +57,7 @@ export async function getComicComments(
           full_name: comment.profiles?.full_name,
           avatar_url: comment.profiles?.avatar_url,
           email: comment.profiles?.email,
+          platform: comment.profiles?.platform,
         },
       })) || []
 
@@ -194,7 +196,8 @@ export async function updateComment(
           id,
           full_name,
           avatar_url,
-          email
+          email,
+          platform
         )
       `)
       .single()
@@ -220,6 +223,7 @@ export async function updateComment(
         full_name: updatedComment.profiles?.full_name,
         avatar_url: updatedComment.profiles?.avatar_url,
         email: updatedComment.profiles?.email,
+        platform: updatedComment.profiles?.platform,
       },
     }
 

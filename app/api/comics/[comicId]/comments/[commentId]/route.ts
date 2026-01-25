@@ -73,7 +73,8 @@ export async function PUT(
           id,
           full_name,
           avatar_url,
-          email
+          email,
+          platform
         )
       `)
       .single()
@@ -102,6 +103,7 @@ export async function PUT(
         full_name: updatedComment.profiles?.full_name,
         avatar_url: updatedComment.profiles?.avatar_url,
         email: updatedComment.profiles?.email,
+        platform: updatedComment.profiles?.platform,
       },
     }
 

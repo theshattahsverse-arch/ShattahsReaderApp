@@ -42,7 +42,8 @@ export async function GET(
           id,
           full_name,
           avatar_url,
-          email
+          email,
+          platform
         )
       `)
       .eq('comic_id', comicId)
@@ -98,6 +99,7 @@ export async function GET(
         full_name: comment.profiles?.full_name,
         avatar_url: comment.profiles?.avatar_url,
         email: comment.profiles?.email,
+        platform: comment.profiles?.platform,
       },
     })) || []
 
@@ -206,7 +208,8 @@ export async function POST(
           id,
           full_name,
           avatar_url,
-          email
+          email,
+          platform
         )
       `)
       .single()
@@ -235,6 +238,7 @@ export async function POST(
         full_name: comment.profiles?.full_name,
         avatar_url: comment.profiles?.avatar_url,
         email: comment.profiles?.email,
+        platform: comment.profiles?.platform,
       },
     }
 
