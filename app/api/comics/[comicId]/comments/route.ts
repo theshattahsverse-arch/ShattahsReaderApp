@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { hasActiveSubscription } from '@/lib/subscription-actions'
+import { getSessionIdFromCookie, hasActiveAnonymousDayPass } from '@/lib/anonymous-daypass'
 
 interface RouteContext {
   params: Promise<{ comicId: string }>
@@ -141,6 +143,21 @@ export async function POST(
         { error: 'Authentication required' },
         { status: 401 }
       )
+    }
+
+    // Check if user has active subscription
+    const hasSubscription = await hasActiveSubscription(user.id)
+    if (!hasSubscription) {
+      // Check for anonymous day pass as fallback
+      const sessionId = getSessionIdFromCookie(request)
+      const hasAnonymousDayPass = sessionId ? await hasActiveAnonymousDayPass(sessionId) : false
+      
+      if (!hasAnonymousDayPass) {
+        return NextResponse.json(
+          { error: 'Active subscription required to comment. Please subscribe to continue.' },
+          { status: 403 }
+        )
+      }
     }
 
     // Verify comic exists

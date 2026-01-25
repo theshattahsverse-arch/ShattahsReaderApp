@@ -57,6 +57,8 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(true)
   const [commentContent, setCommentContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
@@ -67,15 +69,61 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
   const commentTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
   const [showCommentInput, setShowCommentInput] = useState(false)
 
-  // Check authentication
+  // Check authentication and subscription
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuthAndSubscription = async () => {
+      setIsCheckingSubscription(true)
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       setIsAuthenticated(!!user)
       setUser(user)
+
+      if (!user) {
+        // Check for anonymous day pass
+        try {
+          const response = await fetch('/api/subscription/check-anonymous', {
+            credentials: 'include',
+          })
+          const data = await response.json()
+          setHasActiveSubscription(data.hasActiveDayPass || false)
+        } catch (error) {
+          console.error('Error checking anonymous Day Pass:', error)
+          setHasActiveSubscription(false)
+        }
+        setIsCheckingSubscription(false)
+        return
+      }
+
+      // Check subscription status for authenticated user
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('subscription_status, subscription_end_date')
+          .eq('id', user.id)
+          .single()
+
+        if (error || !profile) {
+          setHasActiveSubscription(false)
+        } else {
+          const subscriptionStatus = (profile as any).subscription_status
+          const subscriptionEndDate = (profile as any).subscription_end_date
+
+          if (subscriptionStatus === 'active' && subscriptionEndDate) {
+            const endDate = new Date(subscriptionEndDate)
+            const now = new Date()
+            setHasActiveSubscription(endDate > now)
+          } else {
+            setHasActiveSubscription(false)
+          }
+        }
+      } catch (error) {
+        console.error('Error checking subscription:', error)
+        setHasActiveSubscription(false)
+      } finally {
+        setIsCheckingSubscription(false)
+      }
     }
-    checkAuth()
+    checkAuthAndSubscription()
   }, [])
 
   // Fetch initial comments for this page
@@ -183,7 +231,7 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isAuthenticated || !commentContent.trim() || isSubmitting) return
+    if (!isAuthenticated || !hasActiveSubscription || !commentContent.trim() || isSubmitting) return
 
     const contentToSubmit = commentContent.trim()
     setIsSubmitting(true)
@@ -352,7 +400,9 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
         {/* Comment Input */}
         {showCommentInput && (
         <div className="border-t border-white/30 bg-black/95 backdrop-blur-md flex-shrink-0">
-          {isAuthenticated ? (
+          {isCheckingSubscription ? (
+            <div className="px-3 pb-3 pt-3 text-center text-white/60 text-sm">Checking subscription...</div>
+          ) : isAuthenticated && hasActiveSubscription ? (
             <form onSubmit={handleSubmitComment} className="px-3 pb-3 pt-3">
               <div className="flex gap-2 items-center">
                 <input
@@ -374,7 +424,7 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
                 </Button>
               </div>
             </form>
-          ) : (
+          ) : !isAuthenticated ? (
             <div className="px-3 pb-3 pt-3">
               <Link href="/login">
                 <Button
@@ -383,6 +433,18 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
                   className="w-full border-2 border-amber/50 text-white hover:bg-amber/20 hover:border-amber font-semibold text-sm h-9 shadow-md"
                 >
                   Sign in to comment
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="px-3 pb-3 pt-3">
+              <Link href="/subscription">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-2 border-amber/50 text-amber hover:bg-amber/20 hover:border-amber hover:text-white font-semibold text-sm h-9 shadow-md"
+                >
+                  Subscribe to comment
                 </Button>
               </Link>
             </div>

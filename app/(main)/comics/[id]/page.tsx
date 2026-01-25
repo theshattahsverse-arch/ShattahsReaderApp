@@ -228,7 +228,7 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
             </div>
 
             {/* Read Button (desktop) */}
-            {pages && pages.length > 0 && (
+            {/* {pages && pages.length > 0 && (
               <div className="mt-6 hidden lg:block">
                 <Button
                   asChild
@@ -241,7 +241,7 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                   </Link>
                 </Button>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       </div>

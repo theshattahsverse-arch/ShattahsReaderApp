@@ -62,6 +62,8 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(true)
   const [commentContent, setCommentContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const commentMode = 'comic' // Only comic-level comments
@@ -71,15 +73,61 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
   const commentsEndRef = useRef<HTMLDivElement>(null)
   const commentsContainerRef = useRef<HTMLDivElement>(null)
 
-  // Check authentication
+  // Check authentication and subscription
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuthAndSubscription = async () => {
+      setIsCheckingSubscription(true)
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       setIsAuthenticated(!!user)
       setUser(user)
+
+      if (!user) {
+        // Check for anonymous day pass
+        try {
+          const response = await fetch('/api/subscription/check-anonymous', {
+            credentials: 'include',
+          })
+          const data = await response.json()
+          setHasActiveSubscription(data.hasActiveDayPass || false)
+        } catch (error) {
+          console.error('Error checking anonymous Day Pass:', error)
+          setHasActiveSubscription(false)
+        }
+        setIsCheckingSubscription(false)
+        return
+      }
+
+      // Check subscription status for authenticated user
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('subscription_status, subscription_end_date')
+          .eq('id', user.id)
+          .single()
+
+        if (error || !profile) {
+          setHasActiveSubscription(false)
+        } else {
+          const subscriptionStatus = (profile as any).subscription_status
+          const subscriptionEndDate = (profile as any).subscription_end_date
+
+          if (subscriptionStatus === 'active' && subscriptionEndDate) {
+            const endDate = new Date(subscriptionEndDate)
+            const now = new Date()
+            setHasActiveSubscription(endDate > now)
+          } else {
+            setHasActiveSubscription(false)
+          }
+        }
+      } catch (error) {
+        console.error('Error checking subscription:', error)
+        setHasActiveSubscription(false)
+      } finally {
+        setIsCheckingSubscription(false)
+      }
     }
-    checkAuth()
+    checkAuthAndSubscription()
   }, [])
 
   // Fetch page information to map page_id to page_number
@@ -174,7 +222,7 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isAuthenticated || !commentContent.trim() || isSubmitting) return
+    if (!isAuthenticated || !hasActiveSubscription || !commentContent.trim() || isSubmitting) return
 
     setIsSubmitting(true)
     try {
@@ -433,7 +481,9 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
 
       {/* Comment Input */}
       <div className="p-4 border-t border-white/10">
-        {isAuthenticated ? (
+        {isCheckingSubscription ? (
+          <div className="text-center text-white/60 py-4">Checking subscription...</div>
+        ) : isAuthenticated && hasActiveSubscription ? (
           <form onSubmit={handleSubmitComment} className="space-y-3">
             {/* Page/Comic toggle commented out - only comic comments */}
             {/* <div className="flex gap-2">
@@ -478,11 +528,18 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
               {isSubmitting ? 'Posting...' : 'Post Comment'}
             </Button>
           </form>
-        ) : (
+        ) : !isAuthenticated ? (
           <div className="text-center py-4">
             <p className="text-sm text-white/70 mb-3">Sign in to comment</p>
             <Button asChild variant="outline" className="border-white/20 text-white hover:bg-white/10">
               <Link href="/login">Sign In</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-sm text-white/70 mb-3">Active subscription required to comment</p>
+            <Button asChild variant="outline" className="border-amber/50 text-amber hover:bg-amber/10 hover:text-white">
+              <Link href="/subscription">Subscribe Now</Link>
             </Button>
           </div>
         )}
