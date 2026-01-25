@@ -1,7 +1,17 @@
+'use client'
+
+import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Facebook, Instagram } from 'lucide-react'
 
 export function Footer() {
+  const pathname = usePathname()
+
+  // Hide footer on comic reader page
+  if (pathname?.startsWith('/comics/read/')) {
+    return null
+  }
+
   return (
     <footer className="border-t border-border/50 bg-background/50">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

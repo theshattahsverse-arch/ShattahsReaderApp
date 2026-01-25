@@ -78,6 +78,11 @@ export function Navbar() {
     { href: '/subscription', label: 'Subscription' },
   ]
 
+  // Hide navbar on comic reader page
+  if (pathname?.startsWith('/comics/read/')) {
+    return null
+  }
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
