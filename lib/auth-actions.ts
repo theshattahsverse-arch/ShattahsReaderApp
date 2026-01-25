@@ -92,7 +92,7 @@ export async function getUser() {
 export async function signInWithGoogle() {
   const supabase = await createClient()
   const headersList = await headers()
-  const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://shattahsverse.com'
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
