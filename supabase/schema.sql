@@ -347,9 +347,11 @@ BEGIN
   END IF;
 
   -- Set platform based on provider
-  -- Map 'google' provider to 'google' platform, others default to 'email'
+  -- Map providers to their respective platforms
   IF auth_provider = 'google' THEN
     platform_value := 'google';
+  ELSIF auth_provider = 'facebook' THEN
+    platform_value := 'facebook';
   ELSE
     platform_value := 'email';
   END IF;

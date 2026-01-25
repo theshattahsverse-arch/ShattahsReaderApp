@@ -29,6 +29,8 @@ export async function GET(request: Request) {
         let platform: string | null = null
         if (provider === 'google') {
           platform = 'google'
+        } else if (provider === 'facebook') {
+          platform = 'facebook'
         } else if (provider === 'email') {
           platform = 'email'
         }
