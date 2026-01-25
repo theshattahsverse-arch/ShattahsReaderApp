@@ -352,6 +352,8 @@ BEGIN
     platform_value := 'google';
   ELSIF auth_provider = 'facebook' THEN
     platform_value := 'facebook';
+  ELSIF auth_provider = 'twitter' THEN
+    platform_value := 'twitter';
   ELSE
     platform_value := 'email';
   END IF;

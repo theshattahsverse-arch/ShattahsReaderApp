@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { createClient } from '@/lib/supabase/client'
-import { signInWithGoogle, signInWithFacebook } from '@/lib/auth-actions'
+import { signInWithGoogle, signInWithFacebook, signInWithTwitter } from '@/lib/auth-actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -33,6 +33,7 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [isFacebookLoading, setIsFacebookLoading] = useState(false)
+  const [isTwitterLoading, setIsTwitterLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Show toast message if message parameter exists (only once)
@@ -120,6 +121,25 @@ export function LoginForm() {
     }
   }
 
+  const handleTwitterSignIn = async () => {
+    setIsTwitterLoading(true)
+    setError(null)
+    
+    try {
+      const result = await signInWithTwitter()
+      if (result?.error) {
+        setError(result.error)
+        setIsTwitterLoading(false)
+      } else if (result?.url) {
+        // Redirect to Twitter OAuth URL
+        window.location.href = result.url
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred with Twitter sign in')
+      setIsTwitterLoading(false)
+    }
+  }
+
   return (
     <Card className="w-full max-w-md border-border/50 bg-card/80 backdrop-blur-xl">
       <CardHeader className="space-y-1 text-center">
@@ -184,7 +204,7 @@ export function LoginForm() {
           <Button
             type="submit"
             className="w-full bg-amber hover:bg-amber-dark text-background font-semibold"
-            disabled={isLoading || isGoogleLoading || isFacebookLoading}
+            disabled={isLoading || isGoogleLoading || isFacebookLoading || isTwitterLoading}
           >
             {isLoading ? (
               <>
@@ -210,7 +230,7 @@ export function LoginForm() {
             variant="outline"
             className="w-full hover:text-white"
             onClick={handleGoogleSignIn}
-            disabled={isLoading || isGoogleLoading || isFacebookLoading}
+            disabled={isLoading || isGoogleLoading || isFacebookLoading || isTwitterLoading}
           >
             {isGoogleLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -242,7 +262,7 @@ export function LoginForm() {
             variant="outline"
             className="w-full hover:text-white"
             onClick={handleFacebookSignIn}
-            disabled={isLoading || isGoogleLoading || isFacebookLoading}
+            disabled={isLoading || isGoogleLoading || isFacebookLoading || isTwitterLoading}
           >
             {isFacebookLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -252,6 +272,23 @@ export function LoginForm() {
               </svg>
             )}
             Continue with Facebook
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full hover:text-white"
+            onClick={handleTwitterSignIn}
+            disabled={isLoading || isGoogleLoading || isFacebookLoading || isTwitterLoading}
+          >
+            {isTwitterLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            )}
+            Continue with X
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">

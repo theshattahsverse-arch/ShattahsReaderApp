@@ -31,6 +31,8 @@ export async function GET(request: Request) {
           platform = 'google'
         } else if (provider === 'facebook') {
           platform = 'facebook'
+        } else if (provider === 'twitter') {
+          platform = 'twitter'
         } else if (provider === 'email') {
           platform = 'email'
         }
