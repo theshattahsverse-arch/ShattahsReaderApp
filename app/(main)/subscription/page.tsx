@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge'
 import { Check, Crown, Zap, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase/client'
 import { detectCountryClient } from '@/lib/geo-location'
 import { getPlanDetails, formatPrice } from '@/lib/subscription-utils'
 
@@ -160,6 +161,74 @@ function SubscriptionContent() {
   }, [searchParams, router])
 
   const handleSubscribe = async (planName: string) => {
+    // Day Pass can be purchased without authentication - use anonymous endpoint
+    if (planName === 'Day Pass') {
+      handleDayPassPurchase()
+      return
+    }
+
+    // Check if user is trying to subscribe to member subscription without being logged in
+    if (planName === 'Shattahs Member') {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (!user) {
+          // Redirect to login with toast message and redirect back to subscription page
+          router.push('/login?message=Please sign in to subscribe to Shattahs Member&redirectTo=/subscription')
+          return
+        }
+      } catch (error) {
+        console.error('Error checking authentication:', error)
+        // If there's an error checking auth, still redirect to login
+        router.push('/login?message=Please sign in to subscribe to Shattahs Member&redirectTo=/subscription')
+        return
+      }
+    }
+
+    // Proceed with authenticated subscription
+    handleSubscription(planName)
+  }
+
+  const handleDayPassPurchase = async () => {
+    try {
+      setLoading('Day Pass')
+
+      const response = await fetch('/api/payments/initialize-anonymous', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          planName: 'Day Pass',
+          redirectUrl: window.location.href,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to initialize payment')
+      }
+
+      // Redirect to payment page (Paystack or PayPal)
+      if (data.authorization_url) {
+        // Paystack payment URL
+        window.location.href = data.authorization_url
+      } else if (data.approval_url) {
+        // PayPal approval URL
+        window.location.href = data.approval_url
+      } else {
+        throw new Error('No payment URL received')
+      }
+    } catch (error: any) {
+      console.error('Day Pass purchase error:', error)
+      toast.error(error.message || 'Failed to initialize Day Pass payment. Please try again.')
+      setLoading(null)
+    }
+  }
+
+  const handleSubscription = async (planName: string) => {
     try {
       setLoading(planName)
 

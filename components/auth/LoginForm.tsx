@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -25,11 +26,27 @@ export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') || '/'
+  const message = searchParams.get('message')
+  const toastShownRef = useRef(false)
   
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Show toast message if message parameter exists (only once)
+  useEffect(() => {
+    if (message && !toastShownRef.current) {
+      toastShownRef.current = true
+      toast.info(message)
+      // Clean up URL parameter while preserving redirectTo
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('message')
+      const newSearch = params.toString()
+      const newPath = newSearch ? `/login?${newSearch}` : '/login'
+      router.replace(newPath, { scroll: false })
+    }
+  }, [message, router, searchParams])
 
   const {
     register,
