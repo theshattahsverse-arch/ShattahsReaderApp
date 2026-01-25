@@ -333,13 +333,34 @@ CREATE TRIGGER update_comic_comments_updated_at
 -- Function to handle new user signup (creates profile automatically)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  auth_provider TEXT;
+  platform_value TEXT;
 BEGIN
-  INSERT INTO public.profiles (id, email, full_name, avatar_url)
+  -- Detect authentication provider from identities JSONB array
+  -- Check the first identity's provider (usually the one used for signup)
+  IF NEW.identities IS NOT NULL AND jsonb_array_length(NEW.identities) > 0 THEN
+    auth_provider := NEW.identities->0->>'provider';
+  ELSE
+    -- Default to 'email' if identities array is empty or null
+    auth_provider := 'email';
+  END IF;
+
+  -- Set platform based on provider
+  -- Map 'google' provider to 'google' platform, others default to 'email'
+  IF auth_provider = 'google' THEN
+    platform_value := 'google';
+  ELSE
+    platform_value := 'email';
+  END IF;
+
+  INSERT INTO public.profiles (id, email, full_name, avatar_url, platform)
   VALUES (
     NEW.id,
     NEW.email,
     NEW.raw_user_meta_data->>'full_name',
-    NEW.raw_user_meta_data->>'avatar_url'
+    NEW.raw_user_meta_data->>'avatar_url',
+    platform_value
   )
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;

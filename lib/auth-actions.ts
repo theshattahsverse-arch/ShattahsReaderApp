@@ -92,7 +92,7 @@ export async function getUser() {
 export async function signInWithGoogle() {
   const supabase = await createClient()
   const headersList = await headers()
-  const origin = headersList.get('origin')
+  const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -106,7 +106,9 @@ export async function signInWithGoogle() {
   }
 
   if (data.url) {
-    redirect(data.url)
+    return { url: data.url }
   }
+
+  return { error: 'Failed to generate OAuth URL' }
 }
 

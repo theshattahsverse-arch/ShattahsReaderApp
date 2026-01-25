@@ -26,6 +26,7 @@ export interface Database {
           paypal_order_id: string | null
           paypal_subscription_id: string | null
           payment_provider: string | null
+          platform: string | null
           is_admin: boolean
           created_at: string
           updated_at: string
@@ -44,6 +45,7 @@ export interface Database {
           paypal_order_id?: string | null
           paypal_subscription_id?: string | null
           payment_provider?: string | null
+          platform?: string | null
           is_admin?: boolean
           created_at?: string
           updated_at?: string
@@ -62,6 +64,7 @@ export interface Database {
           paypal_order_id?: string | null
           paypal_subscription_id?: string | null
           payment_provider?: string | null
+          platform?: string | null
           is_admin?: boolean
           created_at?: string
           updated_at?: string

@@ -87,6 +87,9 @@ export function SignupForm() {
       if (result?.error) {
         setError(result.error)
         setIsGoogleLoading(false)
+      } else if (result?.url) {
+        // Redirect to Google OAuth URL
+        window.location.href = result.url
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred with Google sign in')
@@ -240,7 +243,7 @@ export function SignupForm() {
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full hover:text-white"
             onClick={handleGoogleSignIn}
             disabled={isLoading || isGoogleLoading}
           >
