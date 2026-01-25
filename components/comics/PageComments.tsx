@@ -293,7 +293,7 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
             <div className="text-center text-white/80 py-4 text-sm font-medium flex-shrink-0">Loading...</div>
           ) : comments.length === 0 ? (
             <div className="text-center text-white/70 py-4 text-sm font-medium flex-shrink-0">
-              No comments yet
+             
             </div>
           ) : (
             comments.map((comment) => {
