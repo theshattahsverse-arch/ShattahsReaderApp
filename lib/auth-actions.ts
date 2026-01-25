@@ -158,3 +158,26 @@ export async function signInWithTwitter() {
 
   return { error: 'Failed to generate OAuth URL' }
 }
+
+export async function signInWithDiscord() {
+  const supabase = await createClient()
+  const headersList = await headers()
+  const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://shattahsverse.com'
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'discord',
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+    },
+  })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  if (data.url) {
+    return { url: data.url }
+  }
+
+  return { error: 'Failed to generate OAuth URL' }
+}

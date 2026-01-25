@@ -355,6 +355,8 @@ BEGIN
   ELSIF auth_provider = 'twitter' OR auth_provider = 'x' THEN
     -- Handle both 'twitter' (OAuth 1.0a deprecated) and 'x' (OAuth 2.0) providers
     platform_value := 'twitter';
+  ELSIF auth_provider = 'discord' THEN
+    platform_value := 'discord';
   ELSE
     platform_value := 'email';
   END IF;

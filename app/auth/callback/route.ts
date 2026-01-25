@@ -34,16 +34,24 @@ export async function GET(request: Request) {
         } else if (provider === 'twitter' || provider === 'x') {
           // Handle both 'twitter' (OAuth 1.0a) and 'x' (OAuth 2.0) providers
           platform = 'twitter'
+        } else if (provider === 'discord') {
+          platform = 'discord'
         } else if (provider === 'email') {
           platform = 'email'
         }
 
         // Update platform if it's missing or incorrect
-        if (platform && (!profile || profile.platform !== platform)) {
-          await supabase
-            .from('profiles')
-            .update({ platform })
-            .eq('id', data.user.id)
+        if (platform) {
+          const profileData = profile as { platform?: string | null } | null
+          const currentPlatform = profileData?.platform
+          if (!currentPlatform || currentPlatform !== platform) {
+            const updateData: Record<string, any> = { platform }
+            await supabase
+              .from('profiles')
+              // @ts-expect-error - platform field exists in database but types may not be updated
+              .update(updateData)
+              .eq('id', data.user.id)
+          }
         }
       } catch (error) {
         console.error('Error updating platform in callback:', error)
