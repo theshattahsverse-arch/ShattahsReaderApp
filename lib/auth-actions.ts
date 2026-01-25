@@ -140,8 +140,9 @@ export async function signInWithTwitter() {
   const headersList = await headers()
   const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://shattahsverse.com'
 
+  // Uses X / Twitter (OAuth 2.0) - provider must be 'x' for OAuth 2.0
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'twitter',
+    provider: 'x',
     options: {
       redirectTo: `${origin}/auth/callback`,
     },

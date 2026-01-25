@@ -31,7 +31,8 @@ export async function GET(request: Request) {
           platform = 'google'
         } else if (provider === 'facebook') {
           platform = 'facebook'
-        } else if (provider === 'twitter') {
+        } else if (provider === 'twitter' || provider === 'x') {
+          // Handle both 'twitter' (OAuth 1.0a) and 'x' (OAuth 2.0) providers
           platform = 'twitter'
         } else if (provider === 'email') {
           platform = 'email'
