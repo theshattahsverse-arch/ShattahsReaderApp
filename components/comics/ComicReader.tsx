@@ -576,7 +576,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
               {showMobileHints && (
                 <div className="md:hidden absolute top-full left-1/2 -translate-x-1/2 mt-2 rounded-lg bg-black/90 px-4 py-2 text-xs text-white/70 whitespace-nowrap z-50 mr-4">
                   <span className="mr-2">Toggle reading mode</span>
-                  <span>{readingMode === 'vertical' ? 'Click sides turn pages' }</span>
+                  <span>{readingMode === 'vertical' }</span>
                 </div>
               )}
             </div>
