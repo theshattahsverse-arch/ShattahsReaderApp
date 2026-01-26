@@ -187,6 +187,29 @@ CREATE INDEX IF NOT EXISTS idx_anonymous_daypass_expires_at ON public.anonymous_
 CREATE INDEX IF NOT EXISTS idx_anonymous_daypass_user_id ON public.anonymous_daypass(user_id) WHERE user_id IS NOT NULL;
 
 -- ============================================================================
+-- CONTACT SUPPORT TABLE
+-- ============================================================================
+-- Stores user contact support requests and inquiries
+
+CREATE TABLE IF NOT EXISTS public.contact_support (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.profiles ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'resolved', 'closed')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Contact Support indexes
+CREATE INDEX IF NOT EXISTS idx_contact_support_user_id ON public.contact_support(user_id);
+CREATE INDEX IF NOT EXISTS idx_contact_support_status ON public.contact_support(status);
+CREATE INDEX IF NOT EXISTS idx_contact_support_created_at ON public.contact_support(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_contact_support_email ON public.contact_support(email);
+
+-- ============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ============================================================================
 
@@ -198,6 +221,7 @@ ALTER TABLE public.user_favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comic_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_reading_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.anonymous_daypass ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contact_support ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies if they exist (for clean re-runs)
 DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
@@ -218,6 +242,10 @@ DROP POLICY IF EXISTS "Users can update their own reading progress" ON public.us
 DROP POLICY IF EXISTS "Anonymous Day Pass is viewable by everyone" ON public.anonymous_daypass;
 DROP POLICY IF EXISTS "Anonymous Day Pass can be inserted by anyone" ON public.anonymous_daypass;
 DROP POLICY IF EXISTS "Anonymous Day Pass can be updated by anyone" ON public.anonymous_daypass;
+DROP POLICY IF EXISTS "Users can insert their own contact support requests" ON public.contact_support;
+DROP POLICY IF EXISTS "Users can view their own contact support requests" ON public.contact_support;
+DROP POLICY IF EXISTS "Admins can view all contact support requests" ON public.contact_support;
+DROP POLICY IF EXISTS "Admins can update contact support requests" ON public.contact_support;
 
 -- Profiles policies
 CREATE POLICY "Public profiles are viewable by everyone"
@@ -297,6 +325,38 @@ CREATE POLICY "Anonymous Day Pass can be inserted by anyone"
 CREATE POLICY "Anonymous Day Pass can be updated by anyone"
   ON public.anonymous_daypass FOR UPDATE
   USING (true);
+
+-- Contact Support policies
+CREATE POLICY "Users can insert their own contact support requests"
+  ON public.contact_support FOR INSERT
+  WITH CHECK (true);
+
+CREATE POLICY "Users can view their own contact support requests"
+  ON public.contact_support FOR SELECT
+  USING (
+    auth.uid() = user_id OR
+    user_id IS NULL
+  );
+
+CREATE POLICY "Admins can view all contact support requests"
+  ON public.contact_support FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.is_admin = true
+    )
+  );
+
+CREATE POLICY "Admins can update contact support requests"
+  ON public.contact_support FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.is_admin = true
+    )
+  );
 
 -- ============================================================================
 -- TRIGGERS
@@ -422,6 +482,13 @@ CREATE TRIGGER update_page_count_on_delete
 DROP TRIGGER IF EXISTS update_anonymous_daypass_updated_at ON public.anonymous_daypass;
 CREATE TRIGGER update_anonymous_daypass_updated_at
   BEFORE UPDATE ON public.anonymous_daypass
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at_column();
+
+-- Apply updated_at trigger to contact_support
+DROP TRIGGER IF EXISTS update_contact_support_updated_at ON public.contact_support;
+CREATE TRIGGER update_contact_support_updated_at
+  BEFORE UPDATE ON public.contact_support
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
 

@@ -71,6 +71,9 @@ export function Footer() {
             <Link href="/subscription" className="hover:text-amber transition-colors">
               Subscription
             </Link>
+            <Link href="/contact" className="hover:text-amber transition-colors">
+              Contact Support
+            </Link>
            <Link href="/about" className="hover:text-amber transition-colors"> 
               About
             </Link>  
