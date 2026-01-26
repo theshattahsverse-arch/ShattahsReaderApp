@@ -52,8 +52,8 @@ export async function GET(request: NextRequest) {
         transactionRef,
       })
 
-      // Get redirect URL from metadata or default to subscription page
-      const redirectUrl = metadata.redirect_url || '/subscription?success=true&plan=' + encodeURIComponent(planName) + '&anonymous=true'
+      // Get redirect URL from metadata or default to comics page
+      const redirectUrl = metadata.redirect_url || '/comics?success=true&plan=' + encodeURIComponent(planName) + '&anonymous=true'
       
       // Set session ID cookie
       const response = NextResponse.redirect(new URL(redirectUrl, request.url))
@@ -102,9 +102,9 @@ export async function GET(request: NextRequest) {
       paystackSubscriptionCode: subscriptionCode,
     })
 
-    // Redirect to success page
+    // Redirect to comics page with success message
     return NextResponse.redirect(
-      new URL(`/subscription?success=true&plan=${encodeURIComponent(planName)}`, request.url)
+      new URL(`/comics?success=true&plan=${encodeURIComponent(planName)}`, request.url)
     )
   } catch (error: any) {
     console.error('Payment verification error:', error)

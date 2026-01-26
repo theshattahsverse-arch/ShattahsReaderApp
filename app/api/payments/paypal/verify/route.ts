@@ -55,8 +55,8 @@ export async function GET(request: NextRequest) {
           transactionRef: orderId,
         })
 
-        // Get redirect URL from query params or default to subscription page
-        const redirectUrl = searchParams.get('redirect_url') || `/subscription?success=true&plan=${encodeURIComponent(plan)}&anonymous=true`
+        // Get redirect URL from query params or default to comics page
+        const redirectUrl = searchParams.get('redirect_url') || `/comics?success=true&plan=${encodeURIComponent(plan)}&anonymous=true`
 
         // Set session ID cookie and redirect
         const response = NextResponse.redirect(new URL(redirectUrl, request.url))
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
         })
 
         return NextResponse.redirect(
-          new URL(`/subscription?success=true&plan=${encodeURIComponent(plan)}`, request.url)
+          new URL(`/comics?success=true&plan=${encodeURIComponent(plan)}`, request.url)
         )
       } catch (error: any) {
         console.error('PayPal order capture error:', error)
@@ -131,12 +131,12 @@ export async function GET(request: NextRequest) {
         // If subscription is still pending approval, inform user
         if (subscription.status === 'APPROVAL_PENDING') {
           return NextResponse.redirect(
-            new URL(`/subscription?success=true&plan=${encodeURIComponent(plan)}&pending=true`, request.url)
+            new URL(`/comics?success=true&plan=${encodeURIComponent(plan)}&pending=true`, request.url)
           )
         }
 
         return NextResponse.redirect(
-          new URL(`/subscription?success=true&plan=${encodeURIComponent(plan)}`, request.url)
+          new URL(`/comics?success=true&plan=${encodeURIComponent(plan)}`, request.url)
         )
       } catch (error: any) {
         console.error('PayPal subscription verification error:', error)
@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
         // For now, we'll redirect with an info message
         // The webhook will handle the actual subscription update
         return NextResponse.redirect(
-          new URL(`/subscription?success=true&plan=${encodeURIComponent(plan)}&pending=true`, request.url)
+          new URL(`/comics?success=true&plan=${encodeURIComponent(plan)}&pending=true`, request.url)
         )
       } catch (error: any) {
         console.error('PayPal token verification error:', error)
