@@ -374,18 +374,23 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-start gap-2 h-full">
-                    <Avatar className="h-8 w-8 border-2 border-amber/50 flex-shrink-0 shadow-md">
-                      <AvatarImage src={comment.user.avatar_url || undefined} />
-                      <AvatarFallback className="bg-amber/50 text-amber font-bold text-sm flex items-center justify-center">
-                        {comment.user.platform && (comment.user.platform === 'google' || comment.user.platform === 'facebook') ? (
-                          <PlatformIcon platform={comment.user.platform} className="h-5 w-5" />
-                        ) : (
-                          comment.user.full_name?.charAt(0)?.toUpperCase() ||
-                          comment.user.email?.charAt(0)?.toUpperCase() ||
-                          'U'
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
+                    {(() => {
+                      const hasPlatformIcon = comment.user.platform && (comment.user.platform === 'google' || comment.user.platform === 'facebook')
+                      return (
+                        <Avatar className={`h-8 w-8 flex-shrink-0 ${hasPlatformIcon ? 'border-0 shadow-none rounded-none' : 'border-2 border-amber/50 shadow-md'}`}>
+                          <AvatarImage src={comment.user.avatar_url || undefined} />
+                          <AvatarFallback className={`${hasPlatformIcon ? 'bg-transparent rounded-none' : 'bg-amber/50'} text-amber font-bold text-sm flex items-center justify-center`}>
+                            {hasPlatformIcon ? (
+                              <PlatformIcon platform={comment.user.platform} className="h-5 w-5" />
+                            ) : (
+                              comment.user.full_name?.charAt(0)?.toUpperCase() ||
+                              comment.user.email?.charAt(0)?.toUpperCase() ||
+                              'U'
+                            )}
+                          </AvatarFallback>
+                        </Avatar>
+                      )
+                    })()}
                     <div className="flex-1 min-w-0 flex flex-col">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="text-sm font-bold text-white leading-tight drop-shadow-lg" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)' }}>
