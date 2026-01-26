@@ -294,7 +294,7 @@ export function LoginForm() {
             Continue with Facebook
           </Button>
 
-          <Button
+          {/* <Button
             type="button"
             variant="outline"
             className="w-full hover:text-white"
@@ -309,7 +309,7 @@ export function LoginForm() {
               </svg>
             )}
             Continue with X
-          </Button>
+          </Button> */}
 
           <Button
             type="button"

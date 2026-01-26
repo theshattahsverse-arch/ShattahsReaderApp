@@ -348,7 +348,7 @@ export function SignupForm() {
             )}
             Continue with Facebook
           </Button>
-
+{/* 
           <Button
             type="button"
             variant="outline"
@@ -364,7 +364,7 @@ export function SignupForm() {
               </svg>
             )}
             Continue with X
-          </Button>
+          </Button> */}
 
           <Button
             type="button"
