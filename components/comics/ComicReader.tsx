@@ -51,7 +51,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false)
   const [showCommentSidebar, setShowCommentSidebar] = useState(false)
-  const [showMobileHints, setShowMobileHints] = useState(false)
+  const [showMobileHints, setShowMobileHints] = useState(true)
   const horizontalContainerRef = useRef<HTMLDivElement>(null)
   const verticalContainerRef = useRef<HTMLDivElement>(null)
   const currentPageRef = useRef(currentPage)
@@ -557,7 +557,8 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
                   if (window.innerWidth < 768) {
                     e.preventDefault()
                     e.stopPropagation()
-                    setShowMobileHints(!showMobileHints)
+                    setShowMobileHints(false)
+                    toggleReadingMode()
                   } else {
                     toggleReadingMode()
                   }
