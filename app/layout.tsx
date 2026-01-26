@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   description: "Discover and read amazing comics in the ShattahsVerse. In an age of knockoffs... Are your heroes safe?",
   keywords: ["comics", "superhero", "shattahs", "multiverse", "manga", "webtoon"],
   authors: [{ name: "ShattahsVerse" }],
+  icons: {
+    icon: "/shattahs-symbol-6.svg",
+    shortcut: "/shattahs-symbol-6.svg",
+    apple: "/shattahs-symbol-6.svg",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",

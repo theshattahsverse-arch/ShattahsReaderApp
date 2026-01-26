@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
@@ -98,30 +99,13 @@ export function Navbar() {
             <div className="relative">
               {/* Logo icon */}
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber/10 group-hover:bg-amber/20 transition-colors">
-                <svg viewBox="0 0 40 40" className="h-8 w-8">
-                  <polygon
-                    points="20,4 36,13 36,27 20,36 4,27 4,13"
-                    fill="none"
-                    stroke="#f5a623"
-                    strokeWidth="2"
-                  />
-                  <polygon
-                    points="20,10 30,16 30,24 20,30 10,24 10,16"
-                    fill="#f5a623"
-                    opacity="0.3"
-                  />
-                  <text
-                    x="20"
-                    y="24"
-                    textAnchor="middle"
-                    fill="#f5a623"
-                    fontSize="14"
-                    fontWeight="bold"
-                    fontFamily="sans-serif"
-                  >
-                    S
-                  </text>
-                </svg>
+                <Image
+                  src="/shattahs-symbol-6.svg"
+                  alt="Shattahs Logo"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8"
+                />
               </div>
             </div>
             <div className="hidden sm:block">
