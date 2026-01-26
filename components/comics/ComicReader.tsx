@@ -51,6 +51,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false)
   const [showCommentSidebar, setShowCommentSidebar] = useState(false)
+  const [showMobileHints, setShowMobileHints] = useState(false)
   const horizontalContainerRef = useRef<HTMLDivElement>(null)
   const verticalContainerRef = useRef<HTMLDivElement>(null)
   const currentPageRef = useRef(currentPage)
@@ -547,19 +548,37 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
             >
               <MessageSquare className="h-5 w-5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleReadingMode}
-              className="text-white hover:bg-white/10"
-              title={`Switch to ${readingMode === 'vertical' ? 'horizontal' : 'vertical'} reading mode (R)`}
-            >
-              {readingMode === 'vertical' ? (
-                <LayoutGrid className="h-5 w-5" />
-              ) : (
-                <LayoutList className="h-5 w-5" />
+            <div className="relative md:static">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  // On mobile, toggle hints instead of toggling reading mode
+                  if (window.innerWidth < 768) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setShowMobileHints(!showMobileHints)
+                  } else {
+                    toggleReadingMode()
+                  }
+                }}
+                className="text-white hover:bg-white/10"
+                title={`Switch to ${readingMode === 'vertical' ? 'horizontal' : 'vertical'} reading mode (R)`}
+              >
+                {readingMode === 'vertical' ? (
+                  <LayoutGrid className="h-5 w-5" />
+                ) : (
+                  <LayoutList className="h-5 w-5" />
+                )}
+              </Button>
+              {/* Mobile hints - shown below reading mode toggle button */}
+              {showMobileHints && (
+                <div className="md:hidden absolute top-full left-1/2 -translate-x-1/2 mt-2 rounded-lg bg-black/90 px-4 py-2 text-xs text-white/70 whitespace-nowrap z-50 mr-4">
+                  <span className="mr-2">R Toggle reading mode</span>
+                  <span>{readingMode === 'vertical' ? 'Click sides turn pages' : 'Click pages to navigate'}</span>
+                </div>
               )}
-            </Button>
+            </div>
             <Button
               variant="ghost"
               size="icon"
@@ -842,6 +861,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
         <span className="mr-4">R Toggle reading mode</span>
         <span>{readingMode === 'vertical' ? 'Click sides to turn pages' : 'Click pages to navigate'}</span>
       </div>
+
     </div>
   )
 }
