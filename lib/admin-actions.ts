@@ -205,6 +205,10 @@ export async function createComic(formData: FormData) {
     const status = formData.get('status') as ComicStatus
     const isPremium = formData.get('is_premium') === 'true'
     const coverFile = formData.get('cover')
+    const writtenBy = formData.get('written_by') as string
+    const coverArt = formData.get('cover_art') as string
+    const interiorArtLines = formData.get('interior_art_lines') as string
+    const interiorArtColors = formData.get('interior_art_colors') as string
 
     if (!title) {
       return { error: 'Title is required', data: null }
@@ -225,6 +229,10 @@ export async function createComic(formData: FormData) {
         genre: genre.length > 0 ? genre : null,
         status: status || 'Ongoing',
         is_premium: isPremium,
+        written_by: writtenBy || null,
+        cover_art: coverArt || null,
+        interior_art_lines: interiorArtLines || null,
+        interior_art_colors: interiorArtColors || null,
       })
       .select()
       .single()
@@ -299,6 +307,10 @@ export async function updateComic(comicId: string, formData: FormData) {
     const status = formData.get('status') as ComicStatus
     const isPremium = formData.get('is_premium') === 'true'
     const coverFile = formData.get('cover')
+    const writtenBy = formData.get('written_by') as string
+    const coverArt = formData.get('cover_art') as string
+    const interiorArtLines = formData.get('interior_art_lines') as string
+    const interiorArtColors = formData.get('interior_art_colors') as string
 
     if (!title) {
       return { error: 'Title is required', data: null }
@@ -316,6 +328,10 @@ export async function updateComic(comicId: string, formData: FormData) {
       genre: genre.length > 0 ? genre : null,
       status: status || 'Ongoing',
       is_premium: isPremium,
+      written_by: writtenBy || null,
+      cover_art: coverArt || null,
+      interior_art_lines: interiorArtLines || null,
+      interior_art_colors: interiorArtColors || null,
     }
 
     // Upload new cover if provided

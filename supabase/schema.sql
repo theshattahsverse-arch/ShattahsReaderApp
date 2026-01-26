@@ -67,6 +67,10 @@ CREATE TABLE IF NOT EXISTS public.comics (
   is_premium BOOLEAN DEFAULT false,
   status TEXT DEFAULT 'Ongoing' CHECK (status IN ('Ongoing', 'Completed', 'Hiatus', 'Cancelled')),
   published_date TIMESTAMPTZ DEFAULT NOW(),
+  written_by TEXT,
+  cover_art TEXT,
+  interior_art_lines TEXT,
+  interior_art_colors TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

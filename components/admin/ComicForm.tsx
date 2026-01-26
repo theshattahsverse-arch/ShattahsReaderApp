@@ -21,6 +21,10 @@ const comicSchema = z.object({
   genre: z.string().optional(),
   status: z.enum(['Ongoing', 'Completed', 'Hiatus', 'Cancelled']),
   is_premium: z.boolean(),
+  written_by: z.string().optional(),
+  cover_art: z.string().optional(),
+  interior_art_lines: z.string().optional(),
+  interior_art_colors: z.string().optional(),
 })
 
 type ComicFormData = z.infer<typeof comicSchema>
@@ -56,6 +60,10 @@ export function ComicForm({ comic }: ComicFormProps) {
           genre: comic.genre?.join(', ') || '',
           status: comic.status,
           is_premium: comic.is_premium,
+          written_by: comic.written_by || '',
+          cover_art: comic.cover_art || '',
+          interior_art_lines: comic.interior_art_lines || '',
+          interior_art_colors: comic.interior_art_colors || '',
         }
       : {
           status: 'Ongoing',
@@ -90,6 +98,10 @@ export function ComicForm({ comic }: ComicFormProps) {
       formData.append('genre', data.genre || '')
       formData.append('status', data.status)
       formData.append('is_premium', data.is_premium.toString())
+      formData.append('written_by', data.written_by || '')
+      formData.append('cover_art', data.cover_art || '')
+      formData.append('interior_art_lines', data.interior_art_lines || '')
+      formData.append('interior_art_colors', data.interior_art_colors || '')
       
       if (coverFile) {
         formData.append('cover', coverFile, coverFile.name)
@@ -184,6 +196,50 @@ export function ComicForm({ comic }: ComicFormProps) {
                 {...register('genre')}
                 disabled={isLoading}
                 placeholder="Action, Superhero, Sci-Fi (comma separated)"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="written_by">Written By</Label>
+              <Input
+                id="written_by"
+                {...register('written_by')}
+                disabled={isLoading}
+                placeholder="Enter writer name(s)"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cover_art">Cover Art</Label>
+              <Input
+                id="cover_art"
+                {...register('cover_art')}
+                disabled={isLoading}
+                placeholder="Enter cover artist name(s)"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="interior_art_lines">Interior Art Lines</Label>
+              <Input
+                id="interior_art_lines"
+                {...register('interior_art_lines')}
+                disabled={isLoading}
+                placeholder="Enter interior line artist name(s)"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="interior_art_colors">Interior Art Colors</Label>
+              <Input
+                id="interior_art_colors"
+                {...register('interior_art_colors')}
+                disabled={isLoading}
+                placeholder="Enter interior color artist name(s)"
               />
             </div>
           </div>

@@ -84,6 +84,10 @@ export interface Database {
           is_premium: boolean
           status: ComicStatus
           published_date: string | null
+          written_by: string | null
+          cover_art: string | null
+          interior_art_lines: string | null
+          interior_art_colors: string | null
           created_at: string
           updated_at: string
         }
@@ -100,6 +104,10 @@ export interface Database {
           is_premium?: boolean
           status?: ComicStatus
           published_date?: string | null
+          written_by?: string | null
+          cover_art?: string | null
+          interior_art_lines?: string | null
+          interior_art_colors?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -116,6 +124,10 @@ export interface Database {
           is_premium?: boolean
           status?: ComicStatus
           published_date?: string | null
+          written_by?: string | null
+          cover_art?: string | null
+          interior_art_lines?: string | null
+          interior_art_colors?: string | null
           created_at?: string
           updated_at?: string
         }

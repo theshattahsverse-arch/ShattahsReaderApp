@@ -135,6 +135,42 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                 <span className="text-sm text-muted-foreground">Pages</span>
                 <span className="text-sm">{comic.page_count}</span>
               </div>
+              {comic.written_by && (
+                <>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Written By</span>
+                    <span className="text-sm">{comic.written_by}</span>
+                  </div>
+                </>
+              )}
+              {comic.cover_art && (
+                <>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Cover Art</span>
+                    <span className="text-sm">{comic.cover_art}</span>
+                  </div>
+                </>
+              )}
+              {comic.interior_art_lines && (
+                <>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Interior Art Lines</span>
+                    <span className="text-sm">{comic.interior_art_lines}</span>
+                  </div>
+                </>
+              )}
+              {comic.interior_art_colors && (
+                <>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Interior Art Colors</span>
+                    <span className="text-sm">{comic.interior_art_colors}</span>
+                  </div>
+                </>
+              )}
               <Separator />
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Views</span>
