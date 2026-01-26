@@ -837,8 +837,8 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
 
       {/* Keyboard shortcut hints - visible on desktop only */}
       <div className="hidden md:block fixed bottom-20 left-1/2 -translate-x-1/2 rounded-lg bg-black/80 px-4 py-2 text-xs text-white/70">
-        {/* <span className="mr-4">← → Navigate</span>
-        <span className="mr-4">F Fullscreen</span> */}
+        <span className="mr-4">← → Navigate</span>
+        <span className="mr-4">F Fullscreen</span>
         <span className="mr-4">R Toggle reading mode</span>
         <span>{readingMode === 'vertical' ? 'Click sides to turn pages' : 'Click pages to navigate'}</span>
       </div>
