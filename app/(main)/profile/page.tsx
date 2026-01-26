@@ -180,10 +180,6 @@ export default async function ProfilePage() {
                             asChild 
                             variant="outline" 
                             className="w-full"
-                            onClick={async () => {
-                              // TODO: Implement cancel subscription
-                              // This would call an API to cancel the Paystack subscription
-                            }}
                           >
                             <Link href="/subscription">Manage Subscription</Link>
                           </Button>

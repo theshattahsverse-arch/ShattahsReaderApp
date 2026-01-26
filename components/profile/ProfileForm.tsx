@@ -114,7 +114,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
         <CardContent>
           <form onSubmit={handleUpdateProfile} className="space-y-6">
             {/* Avatar Section */}
-            <div className="flex flex-col items-center gap-4 sm:flex-row">
+            {/* <div className="flex flex-col items-center gap-4 sm:flex-row">
               <div className="relative">
                 <Avatar className="h-24 w-24 border-4 border-amber/30">
                   <AvatarImage src={avatarUrl} />
@@ -150,7 +150,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                   Enter a URL for your profile picture
                 </p>
               </div>
-            </div>
+            </div> */}
 
             <Separator />
 
