@@ -120,6 +120,7 @@ export function ComicForm({ comic }: ComicFormProps) {
         router.push(`/admin/comics/${result.data.id}`)
       } else {
         router.refresh()
+        setIsLoading(false)
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred')

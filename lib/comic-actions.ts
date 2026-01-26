@@ -14,7 +14,7 @@ function getImageUrl(path: string | null): string | null {
 }
 
 /**
- * Get all comics (public)
+ * Get all comics (public) - only premium comics
  */
 export async function getAllComics() {
   try {
@@ -22,6 +22,7 @@ export async function getAllComics() {
     const { data, error } = await supabase
       .from('comics')
       .select('*')
+      .eq('is_premium', true)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -107,7 +108,7 @@ export async function getComicPages(comicId: string) {
 }
 
 /**
- * Get popular comics (top rated)
+ * Get popular comics (top rated) - only premium comics
  */
 export async function getPopularComics(limit: number = 4) {
   try {
@@ -115,6 +116,7 @@ export async function getPopularComics(limit: number = 4) {
     const { data, error } = await supabase
       .from('comics')
       .select('*')
+      .eq('is_premium', true)
       .order('rating', { ascending: false })
       .limit(limit)
 
