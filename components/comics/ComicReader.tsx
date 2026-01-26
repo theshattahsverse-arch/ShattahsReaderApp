@@ -51,6 +51,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false)
   const [showCommentSidebar, setShowCommentSidebar] = useState(false)
+  const [showInstructions, setShowInstructions] = useState(true)
   const horizontalContainerRef = useRef<HTMLDivElement>(null)
   const verticalContainerRef = useRef<HTMLDivElement>(null)
   const currentPageRef = useRef(currentPage)
@@ -351,6 +352,15 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
       }
     }
   }, [isCheckingAuth, canAccessPage, pages.length, readingMode])
+
+  // Hide instructions after 5 seconds
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setShowInstructions(false)
+    }, 5000)
+
+    return () => clearTimeout(timeout)
+  }, [])
 
   // Hide controls after inactivity
   useEffect(() => {
@@ -838,7 +848,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
       {/* Keyboard shortcut hints */}
       <div
         className={`fixed bottom-20 left-1/2 -translate-x-1/2 rounded-lg bg-black/80 px-4 py-2 text-xs text-white/70 transition-opacity duration-300 ${
-          showControls ? 'opacity-100' : 'opacity-0'
+          showInstructions ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
         <span className="mr-4">← → Navigate</span>
