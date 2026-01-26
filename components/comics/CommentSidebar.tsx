@@ -244,11 +244,13 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
       if (data.error) {
         console.error('Error creating comment:', data.error)
         alert('Failed to post comment: ' + data.error)
+        setIsSubmitting(false)
         return
       }
 
       setCommentContent('')
-      // Comments will be updated via real-time subscription
+      // Immediately refetch comments to show the new comment
+      await fetchComments()
     } catch (error) {
       console.error('Error submitting comment:', error)
       alert('Failed to post comment')
@@ -281,7 +283,8 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
 
       setEditingCommentId(null)
       setEditContent('')
-      // Comments will be updated via real-time subscription
+      // Immediately refetch comments to show the updated comment
+      await fetchComments()
     } catch (error) {
       console.error('Error updating comment:', error)
       alert('Failed to update comment')
@@ -304,7 +307,8 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
         return
       }
 
-      // Comments will be updated via real-time subscription
+      // Immediately refetch comments to remove the deleted comment
+      await fetchComments()
     } catch (error) {
       console.error('Error deleting comment:', error)
       alert('Failed to delete comment')
