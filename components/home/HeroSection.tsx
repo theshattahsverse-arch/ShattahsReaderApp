@@ -9,7 +9,7 @@ import { ChevronRight, Zap } from 'lucide-react'
 function AnimatedCounter({
   to,
   startWhen,
-  durationMs = 1200,
+  durationMs = 1500,
   suffix = '',
 }: {
   to: number
@@ -175,7 +175,7 @@ export function HeroSection() {
         >
           <div className="text-center">
             <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">
-              <AnimatedCounter to={200} suffix="+" startWhen={startStats} />
+              <AnimatedCounter to={32} suffix="+" startWhen={startStats} />
             </div>
             <div className="text-sm text-white/70">Artists</div>
           </div>
