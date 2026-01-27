@@ -24,12 +24,29 @@ interface Plan {
   icon: typeof Crown
 }
 
+type SubscriptionProfileRow = {
+  subscription_tier: string | null
+  subscription_status: string | null
+  subscription_end_date: string | null
+}
+
 function SubscriptionContent() {
   const [loading, setLoading] = useState<string | null>(null)
   const [plans, setPlans] = useState<Plan[]>([])
   const [isDetectingCountry, setIsDetectingCountry] = useState(true)
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(true)
+  const [subscriptionTier, setSubscriptionTier] = useState<string>('free')
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string>('free')
+  const [subscriptionEndDate, setSubscriptionEndDate] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const router = useRouter()
+
+  const hasActiveSubscription =
+    subscriptionStatus === 'active' &&
+    // If end date is missing (provider-specific), treat as active to prevent re-subscribing
+    (!subscriptionEndDate || new Date(subscriptionEndDate) > new Date())
+
+  const hasActiveMemberSubscription = hasActiveSubscription && subscriptionTier === 'member'
 
   // Detect country and set prices on mount
   useEffect(() => {
@@ -137,6 +154,54 @@ function SubscriptionContent() {
     detectCountry()
   }, [])
 
+  // Fetch subscription status (if logged in) so we can disable re-subscribing
+  useEffect(() => {
+    const fetchSubscriptionStatus = async () => {
+      try {
+        const supabase = createClient()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (!user) {
+          setSubscriptionTier('free')
+          setSubscriptionStatus('free')
+          setSubscriptionEndDate(null)
+          return
+        }
+
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('subscription_tier, subscription_status, subscription_end_date')
+          .eq('id', user.id)
+          .single()
+
+        if (error) {
+          throw error
+        }
+
+        const typedProfile = profile as unknown as SubscriptionProfileRow | null
+        const tier = typedProfile?.subscription_tier ?? 'free'
+        const status = typedProfile?.subscription_status ?? 'free'
+        const endDate = typedProfile?.subscription_end_date ?? null
+
+        setSubscriptionTier(tier)
+        setSubscriptionStatus(status)
+        setSubscriptionEndDate(endDate)
+      } catch (error) {
+        console.error('Error fetching subscription status:', error)
+        // Fail open (allow user to subscribe) if we can't determine status
+        setSubscriptionTier('free')
+        setSubscriptionStatus('free')
+        setSubscriptionEndDate(null)
+      } finally {
+        setIsCheckingSubscription(false)
+      }
+    }
+
+    fetchSubscriptionStatus()
+  }, [])
+
   useEffect(() => {
     // Handle success/error messages from URL params
     const success = searchParams.get('success')
@@ -163,6 +228,55 @@ function SubscriptionContent() {
   const handleSubscribe = async (planName: string) => {
     // Day Pass can be purchased without authentication - use anonymous endpoint
     if (planName === 'Day Pass') {
+      // If user is logged in, prevent buying Day Pass while any active access exists
+      try {
+        const supabase = createClient()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (user) {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('subscription_tier, subscription_status, subscription_end_date')
+            .eq('id', user.id)
+            .single()
+
+          if (!profileError) {
+            const typedProfile = profile as unknown as SubscriptionProfileRow | null
+            const tier = typedProfile?.subscription_tier ?? 'free'
+            const status = typedProfile?.subscription_status ?? 'free'
+            const endDate = typedProfile?.subscription_end_date ?? null
+
+            const isActive =
+              status === 'active' && (!endDate || new Date(endDate) > new Date())
+
+            // Keep UI state in sync with what we just checked
+            setSubscriptionTier(tier)
+            setSubscriptionStatus(status)
+            setSubscriptionEndDate(endDate)
+            setIsCheckingSubscription(false)
+
+            if (isActive) {
+              toast.info('You already have active access. Day Pass is not needed.')
+              return
+            }
+          } else if (!isCheckingSubscription && hasActiveSubscription) {
+            toast.info('You already have active access. Day Pass is not needed.')
+            return
+          }
+        } else if (!isCheckingSubscription && hasActiveSubscription) {
+          toast.info('You already have active access. Day Pass is not needed.')
+          return
+        }
+      } catch (error) {
+        console.error('Error checking subscription for Day Pass:', error)
+        if (!isCheckingSubscription && hasActiveSubscription) {
+          toast.info('You already have active access. Day Pass is not needed.')
+          return
+        }
+      }
+
       handleDayPassPurchase()
       return
     }
@@ -176,6 +290,39 @@ function SubscriptionContent() {
         if (!user) {
           // Redirect to login with toast message and redirect back to subscription page
           router.push('/login?message=Please sign in to subscribe to Shattahs Member&redirectTo=/subscription')
+          return
+        }
+
+        // Prevent re-subscribing if user already has an active member subscription
+        // (double-check on click to avoid any race with the initial background fetch)
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('subscription_tier, subscription_status, subscription_end_date')
+          .eq('id', user.id)
+          .single()
+
+        if (!profileError) {
+          const typedProfile = profile as unknown as SubscriptionProfileRow | null
+          const tier = typedProfile?.subscription_tier ?? 'free'
+          const status = typedProfile?.subscription_status ?? 'free'
+          const endDate = typedProfile?.subscription_end_date ?? null
+
+          const isActive =
+            status === 'active' && (!endDate || new Date(endDate) > new Date())
+
+          // Keep UI state in sync with what we just checked
+          setSubscriptionTier(tier)
+          setSubscriptionStatus(status)
+          setSubscriptionEndDate(endDate)
+          setIsCheckingSubscription(false)
+
+          if (tier === 'member' && isActive) {
+            toast.info('You already have an active Shattahs Member subscription.')
+            return
+          }
+        } else if (!isCheckingSubscription && hasActiveMemberSubscription) {
+          // Fallback to cached state if profile lookup failed
+          toast.info('You already have an active Shattahs Member subscription.')
           return
         }
       } catch (error) {
@@ -221,9 +368,13 @@ function SubscriptionContent() {
       } else {
         throw new Error('No payment URL received')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Day Pass purchase error:', error)
-      toast.error(error.message || 'Failed to initialize Day Pass payment. Please try again.')
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to initialize Day Pass payment. Please try again.'
+      toast.error(message)
       setLoading(null)
     }
   }
@@ -261,9 +412,13 @@ function SubscriptionContent() {
       } else {
         throw new Error('No payment URL received')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Subscription error:', error)
-      toast.error(error.message || 'Failed to initialize payment. Please try again.')
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to initialize payment. Please try again.'
+      toast.error(message)
       setLoading(null)
     }
   }
@@ -358,7 +513,12 @@ function SubscriptionContent() {
                       : ''
                   }`}
                   variant={plan.popular ? 'default' : 'outline'}
-                  disabled={plan.name === 'Free' || loading === plan.name}
+                  disabled={
+                    plan.name === 'Free' ||
+                    loading === plan.name ||
+                    (plan.name === 'Day Pass' && !isCheckingSubscription && hasActiveSubscription) ||
+                    (plan.name === 'Shattahs Member' && !isCheckingSubscription && hasActiveMemberSubscription)
+                  }
                   onClick={() => handleSubscribe(plan.name)}
                 >
                   {loading === plan.name ? (
@@ -366,6 +526,10 @@ function SubscriptionContent() {
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Processing...
                     </>
+                  ) : plan.name === 'Day Pass' && !isCheckingSubscription && hasActiveSubscription ? (
+                    'Already Active'
+                  ) : plan.name === 'Shattahs Member' && !isCheckingSubscription && hasActiveMemberSubscription ? (
+                    'Already Subscribed'
                   ) : (
                     plan.cta
                   )}
