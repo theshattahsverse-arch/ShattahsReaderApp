@@ -11,7 +11,6 @@ import {
   Calendar, 
   BookOpen, 
   Crown,
-  Clock,
   User
 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
@@ -47,7 +46,23 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
   const fullStars = Math.floor(Number(comic.rating) / 2)
   const hasHalfStar = (Number(comic.rating) / 2) % 1 >= 0.5
 
-  const coverImageUrl = comic.cover_image_url || '/images/placeholder-comic.jpg'
+  const pageCount =
+    typeof comic.page_count === 'number'
+      ? comic.page_count
+      : Number(comic.page_count ?? (pages?.length ?? 0)) || (pages?.length ?? 0)
+
+  const viewCount =
+    typeof comic.view_count === 'number'
+      ? comic.view_count
+      : Number(comic.view_count ?? 0) || 0
+
+  const splitCredits = (value: unknown): string[] => {
+    if (typeof value !== 'string') return []
+    return value
+      .split('|')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  }
 
   return (
     <div className="min-h-screen">
@@ -123,58 +138,133 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
             </div>
 
             {/* Stats */}
-            <div className="mt-4 space-y-3 rounded-lg border border-border/50 bg-card/50 p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Status</span>
-                <Badge variant={comic.status === 'Ongoing' ? 'default' : 'secondary'}>
-                  {comic.status}
-                </Badge>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Pages</span>
-                <span className="text-sm">{comic.page_count}</span>
-              </div>
-              {comic.written_by && (
-                <>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Written By</span>
-                    <span className="text-sm">{comic.written_by}</span>
+            <div className="mt-4 rounded-lg border border-border/50 bg-card/50 p-4">
+              <div className="grid grid-cols-1 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled
+                  className="h-auto w-full justify-start whitespace-normal border-border/50 bg-background/40 px-3 py-2 text-left opacity-100"
+                >
+                  <div className="flex w-full flex-col gap-0.5">
+                    <span className="text-xs text-muted-foreground">Status</span>
+                    <span className="inline-flex items-center gap-2">
+                      <Badge variant={comic.status === 'Ongoing' ? 'default' : 'secondary'}>
+                        {comic.status || '—'}
+                      </Badge>
+                    </span>
                   </div>
-                </>
-              )}
-              {comic.cover_art && (
-                <>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Cover Art</span>
-                    <span className="text-sm">{comic.cover_art}</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled
+                  className="h-auto w-full justify-start whitespace-normal border-border/50 bg-background/40 px-3 py-2 text-left opacity-100"
+                >
+                  {/* <div className="flex w-full flex-col gap-0.5">
+                    <span className="text-xs text-muted-foreground">Pages</span>
+                    <span className="text-sm font-semibold text-foreground">{pageCount}</span>
+                  </div> */}
+                </Button>
+
+                {comic.written_by && (
+                  <div className="w-full rounded-md border border-border/50 bg-background/40 px-3 py-2">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs text-muted-foreground">Written By</span>
+                      <div className="flex flex-wrap gap-2">
+                        {splitCredits(comic.written_by).map((name, idx) => (
+                          <Button
+                            key={`${name}-${idx}`}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full border-amber/30 bg-transparent px-4 text-sm font-semibold text-foreground hover:bg-amber/10"
+                          >
+                            {name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </>
-              )}
-              {comic.interior_art_lines && (
-                <>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Interior Art Lines</span>
-                    <span className="text-sm">{comic.interior_art_lines}</span>
+                )}
+
+                {comic.cover_art && (
+                  <div className="w-full rounded-md border border-border/50 bg-background/40 px-3 py-2">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs text-muted-foreground">Cover Art</span>
+                      <div className="flex flex-wrap gap-2">
+                        {splitCredits(comic.cover_art).map((name, idx) => (
+                          <Button
+                            key={`${name}-${idx}`}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full border-amber/30 bg-transparent px-4 text-sm font-semibold text-foreground hover:bg-amber/10"
+                          >
+                            {name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </>
-              )}
-              {comic.interior_art_colors && (
-                <>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Interior Art Colors</span>
-                    <span className="text-sm">{comic.interior_art_colors}</span>
+                )}
+
+                {comic.interior_art_lines && (
+                  <div className="w-full rounded-md border border-border/50 bg-background/40 px-3 py-2">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs text-muted-foreground">Interior Art Lines</span>
+                      <div className="flex flex-wrap gap-2">
+                        {splitCredits(comic.interior_art_lines).map((name, idx) => (
+                          <Button
+                            key={`${name}-${idx}`}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full border-amber/30 bg-transparent px-4 text-sm font-semibold text-foreground hover:bg-amber/10"
+                          >
+                            {name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </>
-              )}
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Views</span>
-                <span className="text-sm">{comic.view_count.toLocaleString()}</span>
+                )}
+
+                {comic.interior_art_colors && (
+                  <div className="w-full rounded-md border border-border/50 bg-background/40 px-3 py-2">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs text-muted-foreground">Interior Art Colors</span>
+                      <div className="flex flex-wrap gap-2">
+                        {splitCredits(comic.interior_art_colors).map((name, idx) => (
+                          <Button
+                            key={`${name}-${idx}`}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full border-amber/30 bg-transparent px-4 text-sm font-semibold text-foreground hover:bg-amber/10"
+                          >
+                            {name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* <Button
+                  type="button"
+                  variant="outline"
+                  disabled
+                  className="h-auto w-full justify-start whitespace-normal border-border/50 bg-background/40 px-3 py-2 text-left opacity-100"
+                >
+                  <div className="flex w-full flex-col gap-0.5">
+                    <span className="text-xs text-muted-foreground">Views</span>
+                    <span className="text-sm font-semibold text-foreground">
+                      {viewCount.toLocaleString()}
+                    </span>
+                  </div>
+                </Button> */}
               </div>
             </div>
 
