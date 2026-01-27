@@ -181,7 +181,7 @@ export function HeroSection() {
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">
-              <AnimatedCounter to={50} suffix="+" startWhen={startStats} />
+              50+
             </div>
             <div className="text-sm text-white/70">Countries</div>
           </div>
