@@ -2,10 +2,86 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ChevronRight, Zap } from 'lucide-react'
 
+function AnimatedCounter({
+  to,
+  startWhen,
+  durationMs = 1200,
+  suffix = '',
+}: {
+  to: number
+  startWhen: boolean
+  durationMs?: number
+  suffix?: string
+}) {
+  const [value, setValue] = useState(0)
+
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') return true
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? true
+  }, [])
+
+  useEffect(() => {
+    if (!startWhen) return
+
+    if (prefersReducedMotion) {
+      setValue(to)
+      return
+    }
+
+    let rafId = 0
+    const start = performance.now()
+    const from = 0
+    const delta = to - from
+
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+
+    const tick = (now: number) => {
+      const elapsed = now - start
+      const t = Math.min(1, elapsed / durationMs)
+      const eased = easeOutCubic(t)
+      const next = Math.round(from + delta * eased)
+      setValue(next)
+      if (t < 1) rafId = requestAnimationFrame(tick)
+    }
+
+    rafId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafId)
+  }, [durationMs, prefersReducedMotion, startWhen, to])
+
+  return (
+    <span>
+      {value}
+      {suffix}
+    </span>
+  )
+}
+
 export function HeroSection() {
+  const statsRef = useRef<HTMLDivElement | null>(null)
+  const [startStats, setStartStats] = useState(false)
+
+  useEffect(() => {
+    if (!statsRef.current || startStats) return
+
+    const el = statsRef.current
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setStartStats(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.35 }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [startStats])
+
   return (
     <section className="relative min-h-[90vh] w-full overflow-hidden">
       {/* Background Image - Surveillance Screens */}
@@ -93,17 +169,26 @@ export function HeroSection() {
         </div>
 
         {/* Stats */}
-        <div className="mt-16 grid grid-cols-3 gap-8 rounded-xl bg-black/40 px-8 py-6 backdrop-blur-sm sm:gap-16 sm:px-12">
+        <div
+          ref={statsRef}
+          className="mt-16 grid grid-cols-3 gap-8 rounded-xl bg-black/40 px-8 py-6 backdrop-blur-sm sm:gap-16 sm:px-12"
+        >
           <div className="text-center">
-            <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">200+</div>
+            <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">
+              <AnimatedCounter to={200} suffix="+" startWhen={startStats} />
+            </div>
             <div className="text-sm text-white/70">Artists</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">50+</div>
+            <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">
+              <AnimatedCounter to={50} suffix="+" startWhen={startStats} />
+            </div>
             <div className="text-sm text-white/70">Countries</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl"> 1 </div>
+            <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">
+              <AnimatedCounter to={1} startWhen={startStats} durationMs={800} />
+            </div>
             <div className="text-sm text-white/70">Mission</div>
           </div>
         </div>
