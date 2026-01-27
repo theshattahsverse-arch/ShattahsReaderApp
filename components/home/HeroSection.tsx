@@ -187,7 +187,7 @@ export function HeroSection() {
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">
-              <AnimatedCounter to={1} startWhen={startStats} durationMs={800} />
+              1
             </div>
             <div className="text-sm text-white/70">Mission</div>
           </div>
