@@ -68,6 +68,8 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
   const commentsContainerRef = useRef<HTMLDivElement>(null)
   const [fadingComments, setFadingComments] = useState<Set<string>>(new Set())
   const commentTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
+  const [enteredComments, setEnteredComments] = useState<Set<string>>(new Set())
+  const enterTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
   const [showCommentInput, setShowCommentInput] = useState(false)
 
   // Check authentication and subscription
@@ -230,6 +232,49 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
     }
   }, [comments, fadingComments])
 
+  // Stagger enter so comments slide in from the left one-by-one.
+  // We keep already-entered comments visible across refetches.
+  useEffect(() => {
+    const currentCommentIds = new Set(comments.map((c) => c.id))
+
+    // Clear enter timers for comments that are no longer in the list
+    enterTimersRef.current.forEach((timer, commentId) => {
+      if (!currentCommentIds.has(commentId)) {
+        clearTimeout(timer)
+        enterTimersRef.current.delete(commentId)
+      }
+    })
+
+    // Schedule enter for any comments that haven't entered yet
+    comments.forEach((comment, index) => {
+      if (enteredComments.has(comment.id) || enterTimersRef.current.has(comment.id)) return
+
+      // Reverse index so newest comments don't wait behind older ones
+      const enterStaggerIndex = Math.max(0, comments.length - 1 - index)
+      const enterDelayMs = enterStaggerIndex * 120
+
+      const timer = setTimeout(() => {
+        setEnteredComments((prev) => new Set(prev).add(comment.id))
+        enterTimersRef.current.delete(comment.id)
+      }, enterDelayMs)
+
+      enterTimersRef.current.set(comment.id, timer)
+    })
+
+    return () => {
+      // Note: we intentionally do NOT clear timers here (that would cancel
+      // stagger mid-flight). Full cleanup happens on unmount below.
+    }
+  }, [comments, enteredComments])
+
+  // Cleanup enter timers on unmount
+  useEffect(() => {
+    return () => {
+      enterTimersRef.current.forEach((timer) => clearTimeout(timer))
+      enterTimersRef.current.clear()
+    }
+  }, [])
+
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isAuthenticated || !hasActiveSubscription || !commentContent.trim() || isSubmitting) return
@@ -358,18 +403,24 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
              
             </div>
           ) : (
-            comments.map((comment) => {
+            comments.map((comment, index) => {
               const isOwnComment = user && comment.user_id === user.id
               const isFading = fadingComments.has(comment.id)
+              const isEntered = enteredComments.has(comment.id)
 
               return (
                 <div
                   key={comment.id}
-                  className={`px-3 py-2.5 animate-in fade-in slide-in-from-bottom-2 w-1/2 rounded-lg transition-all duration-[4000ms] ease-out ${
-                    isFading ? 'opacity-0 -translate-y-20' : 'opacity-100 translate-y-0'
+                  className={`px-3 py-2.5 w-1/2 rounded-lg transition-all ease-out will-change-transform ${
+                    !isEntered
+                      ? 'opacity-0 -translate-x-6'
+                      : isFading
+                        ? 'opacity-0 -translate-y-20 translate-x-0'
+                        : 'opacity-100 translate-x-0 translate-y-0'
                   }`}
                   style={{
                     background: 'transparent',
+                    transitionDuration: isFading ? '4000ms' : '350ms',
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
