@@ -54,6 +54,7 @@ function formatRelativeTime(dateString: string): string {
 }
 
 export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps) {
+  const ENTER_INTERVAL_MS = 3000
   const [comments, setComments] = useState<CommentWithUser[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -69,7 +70,9 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
   const [fadingComments, setFadingComments] = useState<Set<string>>(new Set())
   const commentTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
   const [enteredComments, setEnteredComments] = useState<Set<string>>(new Set())
-  const enterTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
+  const enterQueueRef = useRef<string[]>([])
+  const enterQueuedIdsRef = useRef<Set<string>>(new Set())
+  const enterLoopTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [showCommentInput, setShowCommentInput] = useState(false)
 
   // Check authentication and subscription
@@ -189,22 +192,21 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
     }
   }, [comicId, pageId, fetchComments])
 
-  // Auto-scroll to bottom (newest comments) when new comments arrive
+  // Auto-scroll to bottom when visible comments change
   useEffect(() => {
     if (comments.length > 0 && commentsContainerRef.current) {
-      // Since we're using flex-col-reverse, scroll to 0 to see newest at bottom
       requestAnimationFrame(() => {
         if (commentsContainerRef.current) {
-          commentsContainerRef.current.scrollTop = 0
+          commentsContainerRef.current.scrollTop = commentsContainerRef.current.scrollHeight
         }
       })
     }
-  }, [comments.length])
+  }, [comments.length, enteredComments.size])
 
   // Set up fade-out timers for comments (5 seconds after they appear)
   useEffect(() => {
     // Clear existing timers for comments that are no longer in the list
-    const currentCommentIds = new Set(comments.map(c => c.id))
+    const currentCommentIds = new Set(comments.map((c) => c.id))
     commentTimersRef.current.forEach((timer, commentId) => {
       if (!currentCommentIds.has(commentId)) {
         clearTimeout(timer)
@@ -212,66 +214,81 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
       }
     })
 
-    // Set up new timers for comments that don't have one yet
-    // Add staggered delay so comments float away one by one
-    comments.forEach((comment, index) => {
-      if (!commentTimersRef.current.has(comment.id) && !fadingComments.has(comment.id)) {
-        // Base delay of 5 seconds, plus staggered delay based on index (0.5s between each)
-        const staggeredDelay = 5000 + (index * 500)
-        const timer = setTimeout(() => {
-          setFadingComments((prev) => new Set(prev).add(comment.id))
-        }, staggeredDelay)
-        commentTimersRef.current.set(comment.id, timer)
-      }
-    })
+    // Start fade timers only after a comment has entered (so nothing fades before it appears)
+    enteredComments.forEach((commentId) => {
+      if (!currentCommentIds.has(commentId)) return
+      if (fadingComments.has(commentId) || commentTimersRef.current.has(commentId)) return
 
-    // Cleanup function
+      const timer = setTimeout(() => {
+        setFadingComments((prev) => new Set(prev).add(commentId))
+      }, 5000)
+
+      commentTimersRef.current.set(commentId, timer)
+    })
+  }, [comments, enteredComments, fadingComments])
+
+  // Cleanup fade timers on unmount
+  useEffect(() => {
     return () => {
       commentTimersRef.current.forEach((timer) => clearTimeout(timer))
       commentTimersRef.current.clear()
     }
-  }, [comments, fadingComments])
+  }, [])
 
-  // Stagger enter so comments slide in from the left one-by-one.
-  // We keep already-entered comments visible across refetches.
+  // Reset enter state when switching pages
   useEffect(() => {
-    const currentCommentIds = new Set(comments.map((c) => c.id))
-
-    // Clear enter timers for comments that are no longer in the list
-    enterTimersRef.current.forEach((timer, commentId) => {
-      if (!currentCommentIds.has(commentId)) {
-        clearTimeout(timer)
-        enterTimersRef.current.delete(commentId)
-      }
-    })
-
-    // Schedule enter for any comments that haven't entered yet
-    comments.forEach((comment, index) => {
-      if (enteredComments.has(comment.id) || enterTimersRef.current.has(comment.id)) return
-
-      // Reverse index so newest comments don't wait behind older ones
-      const enterStaggerIndex = Math.max(0, comments.length - 1 - index)
-      const enterDelayMs = enterStaggerIndex * 120
-
-      const timer = setTimeout(() => {
-        setEnteredComments((prev) => new Set(prev).add(comment.id))
-        enterTimersRef.current.delete(comment.id)
-      }, enterDelayMs)
-
-      enterTimersRef.current.set(comment.id, timer)
-    })
-
-    return () => {
-      // Note: we intentionally do NOT clear timers here (that would cancel
-      // stagger mid-flight). Full cleanup happens on unmount below.
+    setEnteredComments(new Set())
+    enterQueueRef.current = []
+    enterQueuedIdsRef.current = new Set()
+    if (enterLoopTimerRef.current) {
+      clearTimeout(enterLoopTimerRef.current)
+      enterLoopTimerRef.current = null
     }
-  }, [comments, enteredComments])
+  }, [comicId, pageId])
 
-  // Cleanup enter timers on unmount
+  // Instagram-live style: reveal one comment every 3 seconds from the bottom.
+  useEffect(() => {
+    // Enqueue any comments that haven't entered yet (oldest -> newest)
+    for (const comment of comments) {
+      if (enteredComments.has(comment.id)) continue
+      if (enterQueuedIdsRef.current.has(comment.id)) continue
+      enterQueuedIdsRef.current.add(comment.id)
+      enterQueueRef.current.push(comment.id)
+    }
+
+    if (enterLoopTimerRef.current || enterQueueRef.current.length === 0) return
+
+    const tick = () => {
+      const nextId = enterQueueRef.current.shift()
+      if (!nextId) {
+        enterLoopTimerRef.current = null
+        return
+      }
+
+      enterQueuedIdsRef.current.delete(nextId)
+      setEnteredComments((prev) => {
+        if (prev.has(nextId)) return prev
+        const next = new Set(prev)
+        next.add(nextId)
+        return next
+      })
+
+      enterLoopTimerRef.current = setTimeout(tick, ENTER_INTERVAL_MS)
+    }
+
+    // Show first queued comment immediately
+    tick()
+  }, [comments, enteredComments, ENTER_INTERVAL_MS])
+
+  // Cleanup enter loop on unmount
   useEffect(() => {
     return () => {
-      enterTimersRef.current.forEach((timer) => clearTimeout(timer))
-      enterTimersRef.current.clear()
+      if (enterLoopTimerRef.current) {
+        clearTimeout(enterLoopTimerRef.current)
+        enterLoopTimerRef.current = null
+      }
+      enterQueueRef.current = []
+      enterQueuedIdsRef.current.clear()
     }
   }, [])
 
@@ -389,11 +406,10 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
   return (
     <div className="absolute left-0 right-0 bottom-0 h-1/2 flex flex-col pointer-events-none z-10">
       <div className="flex-1 overflow-hidden flex flex-col pointer-events-auto">
-        {/* Comments List - Vertical layout, start from bottom */}
+        {/* Comments List - Instagram-live style (stack from bottom) */}
         <div
           ref={commentsContainerRef}
-          className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 flex flex-col gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-          style={{ display: 'flex', flexDirection: 'column-reverse' }}
+          className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 flex flex-col justify-end gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           onClick={() => setShowCommentInput(true)}
         >
           {isLoading ? (
@@ -403,24 +419,21 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
              
             </div>
           ) : (
-            comments.map((comment, index) => {
+            comments
+              .filter((comment) => enteredComments.has(comment.id))
+              .map((comment) => {
               const isOwnComment = user && comment.user_id === user.id
               const isFading = fadingComments.has(comment.id)
-              const isEntered = enteredComments.has(comment.id)
 
               return (
                 <div
                   key={comment.id}
-                  className={`px-3 py-2.5 w-1/2 rounded-lg transition-all ease-out will-change-transform ${
-                    !isEntered
-                      ? 'opacity-0 -translate-x-6'
-                      : isFading
-                        ? 'opacity-0 -translate-y-20 translate-x-0'
-                        : 'opacity-100 translate-x-0 translate-y-0'
+                  className={`px-3 py-2.5 w-1/2 rounded-lg will-change-transform animate-in fade-in slide-in-from-bottom-2 transition-all ease-out ${
+                    isFading ? 'opacity-0 -translate-y-20' : 'opacity-100 translate-y-0'
                   }`}
                   style={{
                     background: 'transparent',
-                    transitionDuration: isFading ? '4000ms' : '350ms',
+                    transitionDuration: isFading ? '4000ms' : '300ms',
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
