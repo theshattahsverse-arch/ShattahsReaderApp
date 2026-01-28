@@ -31,7 +31,6 @@ export const metadata: Metadata = {
     locale: "en_US",
     siteName: "ShattahsVerse",
     title: "ShattahsVerse - The Multiverse Will Never Be the Same",
-    description: "In an age of knockoffs... A New Saga will rise",
   },
   twitter: {
     card: "summary_large_image",
