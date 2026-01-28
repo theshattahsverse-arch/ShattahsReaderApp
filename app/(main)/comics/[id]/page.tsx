@@ -177,9 +177,9 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                           <Button
                             key={`${name}-${idx}`}
                             type="button"
-                            variant="outline"
+                            variant="default"
                             size="sm"
-                            className="rounded-full border-amber/30 bg-transparent px-4 text-sm font-semibold text-foreground hover:bg-amber/10"
+                            className="pointer-events-none rounded-full px-4 text-sm font-semibold shadow-none"
                           >
                             {name}
                           </Button>
@@ -198,9 +198,9 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                           <Button
                             key={`${name}-${idx}`}
                             type="button"
-                            variant="outline"
+                            variant="default"
                             size="sm"
-                            className="rounded-full border-amber/30 bg-transparent px-4 text-sm font-semibold text-foreground hover:bg-amber/10"
+                            className="pointer-events-none rounded-full px-4 text-sm font-semibold shadow-none"
                           >
                             {name}
                           </Button>
@@ -219,9 +219,9 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                           <Button
                             key={`${name}-${idx}`}
                             type="button"
-                            variant="outline"
+                            variant="default"
                             size="sm"
-                            className="rounded-full border-amber/30 bg-transparent px-4 text-sm font-semibold text-foreground hover:bg-amber/10"
+                            className="pointer-events-none rounded-full px-4 text-sm font-semibold shadow-none"
                           >
                             {name}
                           </Button>
@@ -240,9 +240,9 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                           <Button
                             key={`${name}-${idx}`}
                             type="button"
-                            variant="outline"
+                            variant="default"
                             size="sm"
-                            className="rounded-full border-amber/30 bg-transparent px-4 text-sm font-semibold text-foreground hover:bg-amber/10"
+                            className="pointer-events-none rounded-full px-4 text-sm font-semibold shadow-none"
                           >
                             {name}
                           </Button>
