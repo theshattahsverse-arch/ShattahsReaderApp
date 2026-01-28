@@ -74,9 +74,6 @@ export function Footer() {
             <Link href="/contact" className="hover:text-amber transition-colors">
               Contact Support
             </Link>
-           <Link href="/about" className="hover:text-amber transition-colors"> 
-              About
-            </Link>  
           </div>    
 
           {/* Copyright */}
