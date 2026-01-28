@@ -18,8 +18,8 @@ export const metadata: Metadata = {
     default: "ShattahsVerse - The Multiverse Will Never Be the Same",
     template: "%s | ShattahsVerse",
   },
-  description: "Discover and read amazing comics in the ShattahsVerse. In an age of knockoffs... Are your heroes safe?",
-  keywords: ["comics", "superhero", "shattahs", "multiverse", "manga", "webtoon"],
+  description: "In an age of knockoffs... A New Saga will rise",
+  keywords: ["comics", "superhero", "shattahs", "multiverse", "manga", "webtoon","heros","indie","black"],
   authors: [{ name: "ShattahsVerse" }],
   icons: {
     icon: "/shattahs-symbol-6.svg",
@@ -31,12 +31,12 @@ export const metadata: Metadata = {
     locale: "en_US",
     siteName: "ShattahsVerse",
     title: "ShattahsVerse - The Multiverse Will Never Be the Same",
-    description: "Discover and read amazing comics in the ShattahsVerse",
+    description: "In an age of knockoffs... A New Saga will rise,
   },
   twitter: {
     card: "summary_large_image",
     title: "ShattahsVerse",
-    description: "Discover and read amazing comics in the ShattahsVerse",
+    description: "In an age of knockoffs... A New Saga will rise",
   },
 };
 
