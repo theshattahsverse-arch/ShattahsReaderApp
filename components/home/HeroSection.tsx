@@ -175,7 +175,7 @@ export function HeroSection() {
         >
           <div className="text-center">
             <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">
-              <AnimatedCounter to={32} suffix="+" startWhen={startStats} />
+              <AnimatedCounter to={23} suffix="+" startWhen={startStats} />
             </div>
             <div className="text-sm text-white/70">Artists</div>
           </div>
