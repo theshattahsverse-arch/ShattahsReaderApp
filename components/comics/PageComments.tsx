@@ -365,7 +365,7 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
               return (
                 <div
                   key={comment.id}
-                  className={`px-3 py-2.5 animate-in fade-in slide-in-from-bottom-2 w-1/2 rounded-lg transition-all duration-[2000ms] ease-out ${
+                  className={`px-3 py-2.5 animate-in fade-in slide-in-from-bottom-2 w-1/2 rounded-lg transition-all duration-[4000ms] ease-out ${
                     isFading ? 'opacity-0 -translate-y-20' : 'opacity-100 translate-y-0'
                   }`}
                   style={{
