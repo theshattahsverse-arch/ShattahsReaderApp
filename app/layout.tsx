@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s | ShattahsVerse",
   },
   description: "In an age of knockoffs... A New Saga will rise",
-  keywords: ["comics", "superhero", "shattahs", "multiverse", "manga", "webtoon","heros","indie","black"],
+  keywords: ["comics", "superhero", "shattahs", "multiverse", "manga", "webtoon","heros","indie","black","creator","fan","epic"],
   authors: [{ name: "ShattahsVerse" }],
   icons: {
     icon: "/shattahs-symbol-6.svg",
