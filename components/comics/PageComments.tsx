@@ -433,7 +433,7 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
                   }`}
                   style={{
                     background: 'transparent',
-                    transitionDuration: isFading ? '10000ms' : '300ms',
+                    transitionDuration: isFading ? '10000ms' : '500ms',
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
