@@ -443,7 +443,7 @@ function SubscriptionContent() {
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
             All Power to the Artists! 
-            Choose the plan that&apos;s right for you so we can continue to work with the best Art Talent around the Globe. Grab a day pass or Subscribe and get unlimited access to premium comics,
+            Choose the plan that&apos;s right for you so we can continue to work with the best Art Talent around the Globe. Tired of waiting months for your favorite comics ? Grab a day pass or Subscribe and get unlimited access to premium comics,
             exclusive content, and more.
           </p>
         </div>
