@@ -65,7 +65,7 @@ function SubscriptionContent() {
           {
             name: 'Shattahs Member',
             description: 'Become an Exclusive Shattahs Member',
-            price: memberPlan ? formatPrice(memberPlan.amount, memberPlan.currency) : (isNigeria ? '₦2000' : '$1.99'),
+            price: memberPlan ? formatPrice(memberPlan.amount, memberPlan.currency) : (isNigeria ? '₦1000' : '$1.99'),
             period: 'per week',
             features: [
               'Access to competition rewards',
@@ -110,7 +110,7 @@ function SubscriptionContent() {
           {
             name: 'Shattahs Member',
             description: 'Become an Exclusive Shattahs Member',
-            price: '₦2000',
+            price: '₦1000',
             period: 'per week',
             features: [
               'Access to competition rewards',
