@@ -15,9 +15,11 @@ import {
   LayoutGrid,
   LayoutList,
   MessageSquare,
+  Share2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { SubscriptionGateDialog } from './SubscriptionGateDialog'
+import { ComicShareDialog } from './ComicShareDialog'
 import { PageComments } from './PageComments'
 import { CommentSidebar } from './CommentSidebar'
 import type { Comic } from '@/types/database'
@@ -51,6 +53,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false)
   const [showCommentSidebar, setShowCommentSidebar] = useState(false)
+  const [showShareDialog, setShowShareDialog] = useState(false)
   const [showMobileHints, setShowMobileHints] = useState(true)
   const horizontalContainerRef = useRef<HTMLDivElement>(null)
   const verticalContainerRef = useRef<HTMLDivElement>(null)
@@ -542,6 +545,15 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => setShowShareDialog(true)}
+              className="text-white hover:bg-white/10"
+              title="Share comic"
+            >
+              <Share2 className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setShowCommentSidebar(true)}
               className="text-white hover:bg-white/10"
               title="View all comments"
@@ -782,6 +794,15 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
         isAuthenticated={isAuthenticated}
         hasActiveSubscription={hasActiveSubscription}
         currentUrl={`/comics/read/${comic.id}?page=${currentPage + 2}`}
+      />
+
+      {/* Share Dialog */}
+      <ComicShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        comicTitle={comic.title}
+        comicId={comic.id}
+        currentPage={currentPage + 1}
       />
 
       {/* Comment Sidebar */}
