@@ -522,7 +522,7 @@ export function PageComments({ comicId, pageId, pageNumber, onSharePage }: PageC
                       e.stopPropagation()
                       onSharePage(pageNumber)
                     }}
-                    className="border-2 border-white/40 text-white hover:bg-white/20 h-9 px-3 flex-shrink-0 shadow-lg"
+                    className="border-2 border-white/40 text-white hover:bg-white/20 hover:text-white h-9 px-3 flex-shrink-0 shadow-lg"
                     title="Share this page"
                   >
                     <Share2 className="h-4 w-4" />
