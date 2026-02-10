@@ -119,70 +119,49 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
             <h1 className="mt-4 text-2xl font-bold lg:hidden">{comic.title}</h1>
 
             {/* Rating */}
-            <div className="mt-4 flex items-center gap-2">
-              <div className="flex items-center">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-5 w-5 ${
-                      i < fullStars
-                        ? 'fill-amber text-amber'
-                        : i === fullStars && hasHalfStar
-                        ? 'fill-amber/50 text-amber'
-                        : 'text-muted-foreground'
-                    }`}
-                  />
-                ))}
+              <div className="mt-4 flex items-center gap-2">
+                <div className="flex items-center">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-5 w-5 ${
+                        i < fullStars
+                          ? 'fill-amber text-amber'
+                          : i === fullStars && hasHalfStar
+                          ? 'fill-amber/50 text-amber'
+                          : 'text-muted-foreground'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-lg font-bold text-amber">{Number(comic.rating).toFixed(1)}</span>
               </div>
-              <span className="text-lg font-bold text-amber">{Number(comic.rating).toFixed(1)}</span>
-            </div>
 
             {/* Stats */}
             <div className="mt-4 rounded-lg border border-border/50 bg-card/50 p-4">
               <div className="grid grid-cols-1 gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled
-                  className="h-auto w-full justify-start whitespace-normal border-border/50 bg-background/40 px-3 py-2 text-left opacity-100"
-                >
+               
                   <div className="flex w-full flex-col gap-0.5">
                     <span className="text-xs text-muted-foreground">Status</span>
                     <span className="inline-flex items-center gap-2">
-                      <Badge variant={comic.status === 'Ongoing' ? 'default' : 'secondary'}>
+                      <Badge variant="outline" className="border-amber/30">
                         {comic.status || '—'}
                       </Badge>
                     </span>
                   </div>
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled
-                  className="h-auto w-full justify-start whitespace-normal border-border/50 bg-background/40 px-3 py-2 text-left opacity-100"
-                >
-                  {/* <div className="flex w-full flex-col gap-0.5">
-                    <span className="text-xs text-muted-foreground">Pages</span>
-                    <span className="text-sm font-semibold text-foreground">{pageCount}</span>
-                  </div> */}
-                </Button>
-
                 {comic.written_by && (
                   <div className="w-full rounded-md border border-border/50 bg-background/40 px-3 py-2">
                     <div className="flex flex-col gap-2">
                       <span className="text-xs text-muted-foreground">Written By</span>
                       <div className="flex flex-wrap gap-2">
                         {splitCredits(comic.written_by).map((name, idx) => (
-                          <Button
+                          <Badge
                             key={`${name}-${idx}`}
-                            type="button"
-                            variant="default"
-                            size="sm"
-                            className="pointer-events-none rounded-full px-4 text-sm font-semibold shadow-none"
+                            variant="outline"
+                            className="border-amber/30"
                           >
                             {name}
-                          </Button>
+                          </Badge>
                         ))}
                       </div>
                     </div>
@@ -195,15 +174,13 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                       <span className="text-xs text-muted-foreground">Cover Art</span>
                       <div className="flex flex-wrap gap-2">
                         {splitCredits(comic.cover_art).map((name, idx) => (
-                          <Button
+                          <Badge
                             key={`${name}-${idx}`}
-                            type="button"
-                            variant="default"
-                            size="sm"
-                            className="pointer-events-none rounded-full px-4 text-sm font-semibold shadow-none"
+                            variant="outline"
+                            className="border-amber/30"
                           >
                             {name}
-                          </Button>
+                          </Badge>
                         ))}
                       </div>
                     </div>
@@ -216,15 +193,13 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                       <span className="text-xs text-muted-foreground">Interior Art Lines</span>
                       <div className="flex flex-wrap gap-2">
                         {splitCredits(comic.interior_art_lines).map((name, idx) => (
-                          <Button
+                          <Badge
                             key={`${name}-${idx}`}
-                            type="button"
-                            variant="default"
-                            size="sm"
-                            className="pointer-events-none rounded-full px-4 text-sm font-semibold shadow-none"
+                            variant="outline"
+                            className="border-amber/30"
                           >
                             {name}
-                          </Button>
+                          </Badge>
                         ))}
                       </div>
                     </div>
@@ -237,15 +212,13 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                       <span className="text-xs text-muted-foreground">Interior Art Colors</span>
                       <div className="flex flex-wrap gap-2">
                         {splitCredits(comic.interior_art_colors).map((name, idx) => (
-                          <Button
+                          <Badge
                             key={`${name}-${idx}`}
-                            type="button"
-                            variant="default"
-                            size="sm"
-                            className="pointer-events-none rounded-full px-4 text-sm font-semibold shadow-none"
+                            variant="outline"
+                            className="border-amber/30"
                           >
                             {name}
-                          </Button>
+                          </Badge>
                         ))}
                       </div>
                     </div>
