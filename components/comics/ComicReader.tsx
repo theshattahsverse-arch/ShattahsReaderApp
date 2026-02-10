@@ -15,7 +15,6 @@ import {
   LayoutGrid,
   LayoutList,
   MessageSquare,
-  Share2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { SubscriptionGateDialog } from './SubscriptionGateDialog'
@@ -54,6 +53,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false)
   const [showCommentSidebar, setShowCommentSidebar] = useState(false)
   const [showShareDialog, setShowShareDialog] = useState(false)
+  const [sharePageNumber, setSharePageNumber] = useState<number | null>(null)
   const [showMobileHints, setShowMobileHints] = useState(true)
   const horizontalContainerRef = useRef<HTMLDivElement>(null)
   const verticalContainerRef = useRef<HTMLDivElement>(null)
@@ -545,15 +545,6 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowShareDialog(true)}
-              className="text-white hover:bg-white/10"
-              title="Share comic"
-            >
-              <Share2 className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
               onClick={() => setShowCommentSidebar(true)}
               className="text-white hover:bg-white/10"
               title="View all comments"
@@ -683,14 +674,18 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
                       />
                       {/* Page Comments Overlay */}
                       {!isFullscreen && !isLocked && (
-                        <PageComments
+<PageComments
                           comicId={comic.id}
                           pageId={page.id}
                           pageNumber={index + 1}
+                          onSharePage={(pageNum) => {
+                            setSharePageNumber(pageNum)
+                            setShowShareDialog(true)
+                          }}
                         />
                       )}
                       {isLocked && (
-                        <div 
+                        <div
                           className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg cursor-pointer z-10"
                           onClick={(e) => handlePageClick(index, e)}
                         >
@@ -761,14 +756,18 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
                       />
                       {/* Page Comments Overlay */}
                       {!isFullscreen && !isLocked && (
-                        <PageComments
+<PageComments
                           comicId={comic.id}
                           pageId={page.id}
                           pageNumber={index + 1}
+                          onSharePage={(pageNum) => {
+                            setSharePageNumber(pageNum)
+                            setShowShareDialog(true)
+                          }}
                         />
                       )}
                       {isLocked && (
-                        <div 
+                        <div
                           className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg cursor-pointer z-10"
                           onClick={(e) => handlePageClick(index, e)}
                         >
@@ -799,10 +798,13 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
       {/* Share Dialog */}
       <ComicShareDialog
         open={showShareDialog}
-        onOpenChange={setShowShareDialog}
+        onOpenChange={(open) => {
+          setShowShareDialog(open)
+          if (!open) setSharePageNumber(null)
+        }}
         comicTitle={comic.title}
         comicId={comic.id}
-        currentPage={currentPage + 1}
+        sharePageNumber={sharePageNumber ?? undefined}
       />
 
       {/* Comment Sidebar */}

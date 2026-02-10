@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Send } from 'lucide-react'
+import { Send, Share2 } from 'lucide-react'
 import type { CommentWithUser } from '@/types/database'
 import Link from 'next/link'
 import { PlatformIcon } from '@/components/ui/platform-icon'
@@ -13,6 +13,8 @@ interface PageCommentsProps {
   comicId: string
   pageId: string
   pageNumber: number
+  /** Called when user clicks share for this page; only shown when user has subscription */
+  onSharePage?: (pageNumber: number) => void
 }
 
 function formatRelativeTime(dateString: string): string {
@@ -53,7 +55,7 @@ function formatRelativeTime(dateString: string): string {
   return `${diffInYears}y`
 }
 
-export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps) {
+export function PageComments({ comicId, pageId, pageNumber, onSharePage }: PageCommentsProps) {
   const ENTER_INTERVAL_MS = 3000
   const [comments, setComments] = useState<CommentWithUser[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -501,6 +503,7 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
                   maxLength={2000}
                   disabled={isSubmitting}
                 />
+                
                 <Button
                   type="submit"
                   disabled={!commentContent.trim() || isSubmitting}
@@ -509,6 +512,22 @@ export function PageComments({ comicId, pageId, pageNumber }: PageCommentsProps)
                 >
                   <Send className="h-4 w-4" />
                 </Button>
+                {onSharePage && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      onSharePage(pageNumber)
+                    }}
+                    className="border-2 border-white/40 text-white hover:bg-white/20 h-9 px-3 flex-shrink-0 shadow-lg"
+                    title="Share this page"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </form>
           ) : !isAuthenticated ? (

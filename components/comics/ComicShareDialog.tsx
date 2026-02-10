@@ -16,17 +16,18 @@ interface ComicShareDialogProps {
   onOpenChange: (open: boolean) => void
   comicTitle: string
   comicId: string
-  /** Optional: current reader page for share URL (e.g. ?page=3) */
-  currentPage?: number
+  /** Page number being shared (1-based). When set, share URL is reader URL for this page. */
+  sharePageNumber?: number
 }
 
-function getShareUrl(comicId: string, currentPage?: number): string {
+function getShareUrl(comicId: string, sharePageNumber?: number): string {
   if (typeof window === 'undefined') return ''
-  const base = `${window.location.origin}/comics/${comicId}`
-  if (currentPage != null && currentPage > 1) {
-    return `${base}?page=${currentPage}`
+  const origin = window.location.origin
+  // When sharing from reader, use reader URL so the link opens on that page
+  if (sharePageNumber != null && sharePageNumber >= 1) {
+    return `${origin}/comics/read/${comicId}?page=${sharePageNumber}`
   }
-  return base
+  return `${origin}/comics/${comicId}`
 }
 
 function getShareText(comicTitle: string): string {
@@ -38,10 +39,10 @@ export function ComicShareDialog({
   onOpenChange,
   comicTitle,
   comicId,
-  currentPage,
+  sharePageNumber,
 }: ComicShareDialogProps) {
   const [copied, setCopied] = useState(false)
-  const shareUrl = getShareUrl(comicId, currentPage)
+  const shareUrl = getShareUrl(comicId, sharePageNumber)
   const shareText = getShareText(comicTitle)
 
   const copyLink = useCallback(async () => {
@@ -94,7 +95,9 @@ export function ComicShareDialog({
         <DialogHeader>
           <DialogTitle>Share this comic</DialogTitle>
           <DialogDescription className="text-zinc-400">
-            Share &quot;{comicTitle}&quot; with your friends
+            {sharePageNumber != null
+              ? `Share page ${sharePageNumber} of "${comicTitle}" with your friends`
+              : `Share "${comicTitle}" with your friends`}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
