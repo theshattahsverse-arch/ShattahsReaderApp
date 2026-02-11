@@ -283,10 +283,10 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                   <Calendar className="h-4 w-4" />
                   <span>{formatDate(comic.published_date || comic.created_at)}</span>
                 </div>
-     /*           <div className="flex items-center gap-1">
+                {/*           <div className="flex items-center gap-1">
                   <Eye className="h-4 w-4" />
                   <span>{comic.view_count.toLocaleString()} views</span>
-                </div>   */
+                </div>   */}
               </div>
 
               {/* Genre tags */}
