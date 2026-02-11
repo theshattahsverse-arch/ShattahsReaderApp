@@ -489,7 +489,6 @@ function SubscriptionContent() {
               <CardContent className="flex-1">
                 <ul className="space-y-3">
                   {plan.features.map((feature, index) => {
-                    const isDayPassFirst = plan.name === 'Day Pass' && index === 0
                     const isDayPassRest = plan.name === 'Day Pass' && index > 0
                     return (
                       <li key={feature} className="flex items-start gap-2">
