@@ -8,8 +8,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Copy, Check } from 'lucide-react'
-import { useState, useCallback } from 'react'
+import { Copy, Check, ImageIcon } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
 
 interface ComicShareDialogProps {
   open: boolean
@@ -18,6 +18,8 @@ interface ComicShareDialogProps {
   comicId: string
   /** Page number being shared (1-based). When set, share URL is reader URL for this page. */
   sharePageNumber?: number
+  /** Image URL of the page being shared. When set, user can share the actual page image. */
+  sharePageImageUrl?: string | null
 }
 
 function getShareUrl(comicId: string, sharePageNumber?: number): string {
@@ -40,10 +42,47 @@ export function ComicShareDialog({
   comicTitle,
   comicId,
   sharePageNumber,
+  sharePageImageUrl,
 }: ComicShareDialogProps) {
   const [copied, setCopied] = useState(false)
+  const [sharingImage, setSharingImage] = useState(false)
+  const [shareImageError, setShareImageError] = useState<string | null>(null)
   const shareUrl = getShareUrl(comicId, sharePageNumber)
   const shareText = getShareText(comicTitle)
+
+  useEffect(() => {
+    if (open) setShareImageError(null)
+  }, [open])
+
+  const sharePageImage = useCallback(async () => {
+    if (!sharePageImageUrl) return
+    setSharingImage(true)
+    setShareImageError(null)
+    try {
+      const res = await fetch(sharePageImageUrl, { mode: 'cors' })
+      if (!res.ok) throw new Error('Failed to load image')
+      const blob = await res.blob()
+      const ext = blob.type === 'image/png' ? 'png' : 'jpg'
+      const file = new File([blob], `comic-page-${sharePageNumber ?? 'page'}.${ext}`, {
+        type: blob.type || 'image/jpeg',
+      })
+      if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          title: comicTitle,
+          text: shareText,
+          url: shareUrl,
+          files: [file],
+        })
+      } else {
+        setShareImageError('Sharing the image is not supported in this browser. Copy the link or use the buttons below.')
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Could not share image'
+      setShareImageError(message === 'AbortError' ? '' : message)
+    } finally {
+      setSharingImage(false)
+    }
+  }, [sharePageImageUrl, sharePageNumber, comicTitle, shareText, shareUrl])
 
   const copyLink = useCallback(async () => {
     try {
@@ -101,6 +140,24 @@ export function ComicShareDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
+          {/* Share page image - primary when sharing a specific page */}
+          {sharePageImageUrl && (
+            <>
+              <Button
+                type="button"
+                size="lg"
+                className="w-full bg-amber text-black hover:bg-amber/90 font-semibold"
+                onClick={sharePageImage}
+                disabled={sharingImage}
+              >
+                <ImageIcon className="h-5 w-5 mr-2" />
+                {sharingImage ? 'Preparing…' : 'Share page image'}
+              </Button>
+              {shareImageError && (
+                <p className="text-xs text-amber-200/90">{shareImageError}</p>
+              )}
+            </>
+          )}
           {/* Social buttons */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <Button

@@ -54,6 +54,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
   const [showCommentSidebar, setShowCommentSidebar] = useState(false)
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [sharePageNumber, setSharePageNumber] = useState<number | null>(null)
+  const [sharePageImageUrl, setSharePageImageUrl] = useState<string | null>(null)
   const [showMobileHints, setShowMobileHints] = useState(true)
   const horizontalContainerRef = useRef<HTMLDivElement>(null)
   const verticalContainerRef = useRef<HTMLDivElement>(null)
@@ -680,6 +681,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
                           pageNumber={index + 1}
                           onSharePage={(pageNum) => {
                             setSharePageNumber(pageNum)
+                            setSharePageImageUrl(page?.image_url ?? null)
                             setShowShareDialog(true)
                           }}
                         />
@@ -777,6 +779,7 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
                           pageNumber={index + 1}
                           onSharePage={(pageNum) => {
                             setSharePageNumber(pageNum)
+                            setSharePageImageUrl(page?.image_url ?? null)
                             setShowShareDialog(true)
                           }}
                         />
@@ -830,11 +833,15 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
         open={showShareDialog}
         onOpenChange={(open) => {
           setShowShareDialog(open)
-          if (!open) setSharePageNumber(null)
+          if (!open) {
+            setSharePageNumber(null)
+            setSharePageImageUrl(null)
+          }
         }}
         comicTitle={comic.title}
         comicId={comic.id}
         sharePageNumber={sharePageNumber ?? undefined}
+        sharePageImageUrl={sharePageImageUrl ?? undefined}
       />
 
       {/* Comment Sidebar */}
