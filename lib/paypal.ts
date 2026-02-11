@@ -216,7 +216,7 @@ class PayPalClient {
         payment_preferences: {
           auto_bill_outstanding: true,
           setup_fee: {
-            value: amount.toFixed(2),
+            value: 0,
             currency_code: currency,
           },
           setup_fee_failure_action: 'CONTINUE',
