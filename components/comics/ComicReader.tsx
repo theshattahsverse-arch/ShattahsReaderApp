@@ -700,6 +700,21 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
                 </div>
               )
             })}
+            {/* Call to Action - end of comic */}
+            <a
+              href="https://www.kickstarter.com/projects/shattahs/the-shatsverse-first-mugen-art-sci-fi-series?ref=nav_search&result=project&term=Shattahs&total_hits=44"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full max-w-4xl mt-4"
+            >
+              <Image
+                src="/images/backgrounds/Shattahs-Call-to-Action.jpeg"
+                alt="The Shatsverse - First Mugen Art Sci-Fi Series on Kickstarter"
+                width={1200}
+                height={600}
+                className="w-full h-auto object-contain rounded-lg"
+              />
+            </a>
           </div>
         </div>
       ) : (
@@ -782,6 +797,21 @@ export function ComicReader({ comic, pages, currentPageIndex: initialPageIndex }
                 </div>
               )
             })}
+            {/* Call to Action - end of comic */}
+            <a
+              href="https://www.kickstarter.com/projects/shattahs/the-shatsverse-first-mugen-art-sci-fi-series?ref=nav_search&result=project&term=Shattahs&total_hits=44"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative flex-shrink-0 block"
+              style={{ height: '90vh', aspectRatio: '2/3', maxHeight: '90vh' }}
+            >
+              <Image
+                src="/images/backgrounds/Shattahs-Call-to-Action.jpeg"
+                alt="The Shatsverse - First Mugen Art Sci-Fi Series on Kickstarter"
+                fill
+                className="object-contain rounded-lg"
+              />
+            </a>
           </div>
         </div>
       )}
