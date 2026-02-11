@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Check, Crown, Zap, Loader2 } from 'lucide-react'
+import { Check, Crown, X, Zap, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { detectCountryClient } from '@/lib/geo-location'
@@ -488,12 +488,20 @@ function SubscriptionContent() {
 
               <CardContent className="flex-1">
                 <ul className="space-y-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2">
-                      <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
-                      <span className="text-sm">{feature}</span>
-                    </li>
-                  ))}
+                  {plan.features.map((feature, index) => {
+                    const isDayPassFirst = plan.name === 'Day Pass' && index === 0
+                    const isDayPassRest = plan.name === 'Day Pass' && index > 0
+                    return (
+                      <li key={feature} className="flex items-start gap-2">
+                        {isDayPassRest ? (
+                          <X className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
+                        ) : (
+                          <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
+                        )}
+                        <span className="text-sm">{feature}</span>
+                      </li>
+                    )
+                  })}
                   {plan.limitations.map((limitation) => (
                     <li key={limitation} className="flex items-start gap-2 text-muted-foreground">
                       <span className="mt-0.5 h-4 w-4 flex-shrink-0 text-center">•</span>
