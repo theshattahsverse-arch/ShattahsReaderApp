@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Send, Share2 } from 'lucide-react'
 import type { CommentWithUser } from '@/types/database'
 import Link from 'next/link'
-import { PlatformIcon } from '@/components/ui/platform-icon'
+import { PlatformIcon, hasPlatformIcon } from '@/components/ui/platform-icon'
 
 interface PageCommentsProps {
   comicId: string
@@ -61,6 +61,7 @@ export function PageComments({ comicId, pageId, pageNumber, onSharePage }: PageC
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [userPlatform, setUserPlatform] = useState<string | null>(null)
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(true)
   const [commentContent, setCommentContent] = useState('')
@@ -106,13 +107,14 @@ export function PageComments({ comicId, pageId, pageNumber, onSharePage }: PageC
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('subscription_status, subscription_end_date')
+          .select('subscription_status, subscription_end_date, platform')
           .eq('id', user.id)
           .single()
 
         if (error || !profile) {
           setHasActiveSubscription(false)
         } else {
+          setUserPlatform((profile as any).platform ?? null)
           const subscriptionStatus = (profile as any).subscription_status
           const subscriptionEndDate = (profile as any).subscription_end_date
 
@@ -300,18 +302,9 @@ export function PageComments({ comicId, pageId, pageNumber, onSharePage }: PageC
 
     const contentToSubmit = commentContent.trim()
     setIsSubmitting(true)
-    
-    // Get platform from user identities
-    const identities = (user as any).identities || []
-    const provider = identities.length > 0 ? identities[0]?.provider : null
-    let platform: string | null = null
-    if (provider === 'google') {
-      platform = 'google'
-    } else if (provider === 'facebook') {
-      platform = 'facebook'
-    } else if (provider === 'email') {
-      platform = 'email'
-    }
+
+    // Platform comes from profiles table (already populated on signup)
+    const platform = userPlatform
 
     // Optimistic update - add comment immediately to local state
     const optimisticComment: CommentWithUser = {
@@ -441,12 +434,12 @@ export function PageComments({ comicId, pageId, pageNumber, onSharePage }: PageC
                 >
                   <div className="flex items-start gap-2 h-full">
                     {(() => {
-                      const hasPlatformIcon = comment.user.platform && (comment.user.platform === 'google' || comment.user.platform === 'facebook')
+                      const showPlatformIcon = hasPlatformIcon(comment.user.platform)
                       return (
-                        <Avatar className={`h-8 w-8 flex-shrink-0 ${hasPlatformIcon ? 'border-0 shadow-none rounded-none' : 'border-2 border-amber/50 shadow-md'}`}>
-                          <AvatarImage src={comment.user.avatar_url || undefined} />
-                          <AvatarFallback className={`${hasPlatformIcon ? 'bg-transparent rounded-none' : 'bg-amber/50'} text-amber font-bold text-sm flex items-center justify-center`}>
-                            {hasPlatformIcon ? (
+                        <Avatar className={`h-8 w-8 flex-shrink-0 ${showPlatformIcon ? 'border-0 shadow-none rounded-none' : 'border-2 border-amber/50 shadow-md'}`}>
+                          <AvatarImage src={showPlatformIcon ? undefined : (comment.user.avatar_url || undefined)} />
+                          <AvatarFallback className={`${showPlatformIcon ? 'bg-transparent rounded-none' : 'bg-amber/50'} text-amber font-bold text-sm flex items-center justify-center`}>
+                            {showPlatformIcon ? (
                               <PlatformIcon platform={comment.user.platform} className="h-5 w-5" />
                             ) : (
                               comment.user.full_name?.charAt(0)?.toUpperCase() ||

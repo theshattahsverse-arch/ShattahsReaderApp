@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { MessageSquare, Send, Edit2, Trash2, X } from 'lucide-react'
 import type { CommentWithUser } from '@/types/database'
 import Link from 'next/link'
-import { PlatformIcon } from '@/components/ui/platform-icon'
+import { PlatformIcon, hasPlatformIcon } from '@/components/ui/platform-icon'
 
 interface CommentSidebarProps {
   comicId: string
@@ -420,12 +420,12 @@ export function CommentSidebar({ comicId, currentPageId, currentPageNumber, isVi
                   <>
                     <div className="flex items-start gap-3">
                       {(() => {
-                        const hasPlatformIcon = comment.user.platform && (comment.user.platform === 'google' || comment.user.platform === 'facebook')
+                        const showPlatformIcon = hasPlatformIcon(comment.user.platform)
                         return (
-                          <Avatar className={`h-8 w-8 ${hasPlatformIcon ? 'border-0 rounded-none' : 'border border-white/20'}`}>
-                            <AvatarImage src={comment.user.avatar_url || undefined} />
-                            <AvatarFallback className={`${hasPlatformIcon ? 'bg-transparent rounded-none' : 'bg-amber/20'} text-amber text-xs flex items-center justify-center`}>
-                              {hasPlatformIcon ? (
+                          <Avatar className={`h-8 w-8 ${showPlatformIcon ? 'border-0 rounded-none' : 'border border-white/20'}`}>
+                            <AvatarImage src={showPlatformIcon ? undefined : (comment.user.avatar_url || undefined)} />
+                            <AvatarFallback className={`${showPlatformIcon ? 'bg-transparent rounded-none' : 'bg-amber/20'} text-amber text-xs flex items-center justify-center`}>
+                              {showPlatformIcon ? (
                                 <PlatformIcon platform={comment.user.platform} className="h-5 w-5" />
                               ) : (
                                 comment.user.full_name?.charAt(0)?.toUpperCase() ||
