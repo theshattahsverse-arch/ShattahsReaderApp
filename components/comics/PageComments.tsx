@@ -77,6 +77,7 @@ export function PageComments({ comicId, pageId, pageNumber, onSharePage }: PageC
   const enterQueuedIdsRef = useRef<Set<string>>(new Set())
   const enterLoopTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [showCommentInput, setShowCommentInput] = useState(false)
+  const [isSharing, setIsSharing] = useState(false)
 
   // Check authentication and subscription
   useEffect(() => {
@@ -377,6 +378,64 @@ export function PageComments({ comicId, pageId, pageNumber, onSharePage }: PageC
     }
   }
 
+  const handleSharePage = async () => {
+    if (!onSharePage || !user || !isAuthenticated || !hasActiveSubscription || isSharing) return
+    const userName = user.user_metadata?.full_name || user.email || 'Someone'
+    const shareContent = `${userName} just shared this page ${pageNumber}`
+    setIsSharing(true)
+
+    const platform = userPlatform
+    const optimisticComment: CommentWithUser = {
+      id: `temp-share-${Date.now()}`,
+      user_id: user.id,
+      comic_id: comicId,
+      page_id: pageId,
+      parent_id: null,
+      content: shareContent,
+      rating: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      user: {
+        id: user.id,
+        full_name: user.user_metadata?.full_name || null,
+        avatar_url: user.user_metadata?.avatar_url || null,
+        email: user.email || null,
+        platform,
+      },
+    }
+    setComments((prev) => [...prev, optimisticComment])
+    setTimeout(() => {
+      if (commentsContainerRef.current) {
+        commentsContainerRef.current.scrollTop = 0
+      }
+    }, 100)
+
+    try {
+      const response = await fetch(`/api/comics/${comicId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: shareContent,
+          page_id: pageId,
+        }),
+      })
+      const data = await response.json()
+      if (data.error) {
+        setComments((prev) => prev.filter((c) => c.id !== optimisticComment.id))
+      } else if (data.data) {
+        setComments((prev) =>
+          prev.map((c) => (c.id === optimisticComment.id ? data.data : c))
+        )
+      }
+    } catch (error) {
+      console.error('Error creating share comment:', error)
+      setComments((prev) => prev.filter((c) => c.id !== optimisticComment.id))
+    } finally {
+      setIsSharing(false)
+      onSharePage(pageNumber)
+    }
+  }
+
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm('Are you sure you want to delete this comment?')) return
 
@@ -513,12 +572,13 @@ export function PageComments({ comicId, pageId, pageNumber, onSharePage }: PageC
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      onSharePage(pageNumber)
+                      handleSharePage()
                     }}
+                    disabled={isSharing}
                     className="border-2 border-white/40 text-white hover:bg-white/20 hover:text-white h-9 px-3 flex-shrink-0 shadow-lg"
                     title="Share this page"
                   >
-                    <Share2 className="h-4 w-4" />
+                    <Share2 className={`h-4 w-4 ${isSharing ? 'animate-pulse' : ''}`} />
                   </Button>
                 )}
               </div>
