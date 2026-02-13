@@ -17,11 +17,13 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const origin =
-    request.nextUrl.origin ||
+  // Use canonical origin so redirect_uri matches exactly what you registered on Reddit (www vs non-www).
+  const canonicalOrigin =
+    process.env.REDDIT_REDIRECT_ORIGIN ||
     process.env.NEXT_PUBLIC_APP_URL ||
+    request.nextUrl.origin ||
     'https://shattahsverse.com'
-  const redirectUri = `${origin}/auth/reddit/callback`
+  const redirectUri = `${canonicalOrigin.replace(/\/$/, '')}/auth/reddit/callback`
 
   const state = crypto.randomUUID()
   const params = new URLSearchParams({

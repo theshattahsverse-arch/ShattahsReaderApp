@@ -85,11 +85,13 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error')
   const next = searchParams.get('next') ?? '/'
 
-  const origin =
-    request.nextUrl.origin ||
+  // Must match exactly the redirect_uri used in the authorize request (see /auth/reddit route).
+  const canonicalOrigin =
+    process.env.REDDIT_REDIRECT_ORIGIN ||
     process.env.NEXT_PUBLIC_APP_URL ||
+    request.nextUrl.origin ||
     'https://shattahsverse.com'
-  const redirectUri = `${origin}/auth/reddit/callback`
+  const redirectUri = `${canonicalOrigin.replace(/\/$/, '')}/auth/reddit/callback`
 
   if (error) {
     return NextResponse.redirect(
