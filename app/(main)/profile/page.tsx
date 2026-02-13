@@ -173,7 +173,7 @@ export default async function ProfilePage() {
                         <p className="text-xs text-muted-foreground text-center">
                           {subscriptionTier === 'member'
                             ? 'Your subscription will automatically renew weekly'
-                            : 'Your day pass expires in 24 hours'}
+                            : 'Your day pass expires in 4 hours'}
                         </p>
                         {subscriptionTier === 'member' && (
                           <Button 
