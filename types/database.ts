@@ -70,6 +70,20 @@ export interface Database {
           updated_at?: string
         }
       }
+      reddit_user_ids: {
+        Row: {
+          reddit_id: string
+          user_id: string
+        }
+        Insert: {
+          reddit_id: string
+          user_id: string
+        }
+        Update: {
+          reddit_id?: string
+          user_id?: string
+        }
+      }
       comics: {
         Row: {
           id: string

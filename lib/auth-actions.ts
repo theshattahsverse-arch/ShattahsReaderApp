@@ -181,3 +181,14 @@ export async function signInWithDiscord() {
 
   return { error: 'Failed to generate OAuth URL' }
 }
+
+/**
+ * Reddit OAuth is not a built-in Supabase provider, so we redirect to our own route
+ * which then redirects to Reddit and handles the callback.
+ */
+export async function signInWithReddit() {
+  const headersList = await headers()
+  const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://shattahsverse.com'
+  const url = `${origin}/auth/reddit`
+  return { url }
+}
