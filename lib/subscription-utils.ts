@@ -16,7 +16,7 @@ export function getPlanDetails(planName: string, isNigeria: boolean = true) {
     // Nigerian prices in kobo (smallest NGN unit)
     const plans: Record<string, { amount: number; tier: SubscriptionTier; interval?: string; currency: string }> = {
       'Shattahs Member': {
-        amount: 200000, // ₦2,000 in kobo (2000 * 100)
+        amount: 100000, // ₦1,000 in kobo (1000 * 100)
         tier: 'member',
         interval: 'weekly',
         currency: 'NGN',
