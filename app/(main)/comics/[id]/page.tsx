@@ -305,7 +305,7 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
             </div>
 
             {/* Artists */}
-            {artists && artists.length > 0 && (
+            {/* {artists && artists.length > 0 && (
               <div className="mt-6 rounded-lg border border-border/50 bg-card/50 p-6">
                 <h2 className="mb-4 text-lg font-semibold">Meet the Artists</h2>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -358,7 +358,7 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Pages Section */}
             <div className="mt-6 rounded-lg border border-border/50 bg-card/50 p-6">

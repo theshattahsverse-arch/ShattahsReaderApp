@@ -139,6 +139,34 @@ export async function getPopularComics(limit: number = 4) {
 }
 
 /**
+ * Get all artists (public) - for Artist Spotlight page
+ */
+export async function getAllArtistsPublic() {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('artists')
+      .select('*')
+      .order('name', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching artists:', error)
+      return { error: error.message, data: null }
+    }
+
+    const artistsWithUrls = (data || []).map((artist) => ({
+      ...artist,
+      picture_url: getImageUrl(artist.picture_path),
+    }))
+
+    return { error: null, data: artistsWithUrls }
+  } catch (error: any) {
+    console.error('Error in getAllArtistsPublic:', error)
+    return { error: error.message || 'Failed to fetch artists', data: null }
+  }
+}
+
+/**
  * Get artists for a comic (public) - artists where comic_id matches
  */
 export async function getArtistsForComic(comicId: string) {
@@ -147,7 +175,7 @@ export async function getArtistsForComic(comicId: string) {
     const { data, error } = await supabase
       .from('artists')
       .select('*')
-      // .eq('comic_id', comicId)
+      .eq('comic_id', comicId)
       .order('name', { ascending: true })
 
     if (error) {

@@ -76,6 +76,7 @@ export function Navbar() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/comics', label: 'Comics' },
+    { href: '/artists', label: 'Artist Spotlight' },
     { href: '/subscription', label: 'Subscription' },
   ]
 
