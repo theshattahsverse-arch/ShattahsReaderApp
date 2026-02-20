@@ -125,6 +125,70 @@ export async function uploadComicCover(
 }
 
 /**
+ * Upload artist picture (stored in comics bucket at artists/{artistId}/picture.{ext})
+ */
+export async function uploadArtistPicture(
+  artistId: string,
+  file: File
+): Promise<UploadResult> {
+  try {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.is_admin) {
+      return { success: false, error: 'Unauthorized: Admin access required' }
+    }
+
+    const validationError = validateImageFile(file)
+    if (validationError) {
+      return { success: false, error: validationError }
+    }
+
+    const ext = getFileExtension(file.name, file.type)
+    const filePath = `artists/${artistId}/picture.${ext}`
+
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('comics')
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        upsert: true,
+      })
+
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError)
+      if (uploadError.message.includes('Bucket not found') || uploadError.message.includes('not found')) {
+        return { success: false, error: 'Storage bucket "comics" not found. Please create it in Supabase Storage.' }
+      }
+      if (uploadError.message.includes('new row violates row-level security') || uploadError.message.includes('permission')) {
+        return { success: false, error: 'Storage permission denied. Please check bucket policies in Supabase.' }
+      }
+      return { success: false, error: `Upload failed: ${uploadError.message}` }
+    }
+
+    if (!uploadData) {
+      return { success: false, error: 'Upload failed: No data returned' }
+    }
+
+    return { success: true, path: filePath }
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Upload failed' }
+  }
+}
+
+/**
  * Upload comic page images
  */
 export async function uploadComicPages(

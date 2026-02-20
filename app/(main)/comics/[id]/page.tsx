@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { getComicById, getComicPages } from '@/lib/comic-actions'
+import { getComicById, getComicPages, getArtistsForComic } from '@/lib/comic-actions'
 import { 
   Star, 
   Eye, 
@@ -37,6 +37,7 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
   const { id } = await params
   const { data: comic, error: comicError } = await getComicById(id)
   const { data: pages } = await getComicPages(id)
+  const { data: artists } = await getArtistsForComic(id)
 
   if (comicError || !comic) {
     notFound()
@@ -63,6 +64,8 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
       .map((s) => s.trim())
       .filter(Boolean)
   }
+
+  console.log("artists =>", artists)
 
   return (
     <div className="min-h-screen">
@@ -300,6 +303,62 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                 </div>
               )}
             </div>
+
+            {/* Artists */}
+            {artists && artists.length > 0 && (
+              <div className="mt-6 rounded-lg border border-border/50 bg-card/50 p-6">
+                <h2 className="mb-4 text-lg font-semibold">Meet the Artists</h2>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {artists.map((artist) => (
+                    <div
+                      key={artist.id}
+                      className="flex gap-4 rounded-lg border border-border/50 bg-background/40 p-4"
+                    >
+                      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-full border border-border/50">
+                        {artist.picture_url ? (
+                          <Image
+                            src={artist.picture_url}
+                            alt={artist.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-muted text-lg font-semibold text-muted-foreground">
+                            {artist.name.charAt(0)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold">
+                          {artist.hyperlink ? (
+                            <a
+                              href={artist.hyperlink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-amber hover:underline"
+                            >
+                              {artist.name}
+                            </a>
+                          ) : (
+                            artist.name
+                          )}
+                        </h3>
+                        {artist.bio && (
+                          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                            {artist.bio}
+                          </p>
+                        )}
+                        {artist.social_handle && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            @{artist.social_handle}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Pages Section */}
             <div className="mt-6 rounded-lg border border-border/50 bg-card/50 p-6">

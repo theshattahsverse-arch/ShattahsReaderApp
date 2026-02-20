@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { uploadComicCover } from '@/lib/storage-actions'
+import { uploadComicCover, uploadArtistPicture, deleteComicFile } from '@/lib/storage-actions'
 import type { ComicStatus } from '@/types/database'
 
 /**
@@ -473,6 +473,260 @@ export async function deleteComic(comicId: string) {
     return { error: null }
   } catch (error: any) {
     return { error: error.message || 'Failed to delete comic' }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Artists (admin CRUD)
+// ---------------------------------------------------------------------------
+
+export type ArtistWithComic = Awaited<ReturnType<typeof getAllArtists>>['data'] extends (infer T)[] | null ? T : never
+
+/**
+ * Get all artists (admin), with optional comic title
+ */
+export async function getAllArtists() {
+  try {
+    const isAdmin = await checkAdminStatus()
+    if (!isAdmin) {
+      return { error: 'Unauthorized', data: null }
+    }
+
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('artists')
+      .select(`
+        *,
+        comics(title)
+      `)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      return { error: error.message, data: null }
+    }
+
+    return { error: null, data }
+  } catch (error: any) {
+    return { error: error.message || 'Failed to fetch artists', data: null }
+  }
+}
+
+/**
+ * Get artist by ID (admin)
+ */
+export async function getArtistById(artistId: string) {
+  try {
+    const isAdmin = await checkAdminStatus()
+    if (!isAdmin) {
+      return { error: 'Unauthorized', data: null }
+    }
+
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('artists')
+      .select('*')
+      .eq('id', artistId)
+      .single()
+
+    if (error) {
+      return { error: error.message, data: null }
+    }
+
+    return { error: null, data }
+  } catch (error: any) {
+    return { error: error.message || 'Failed to fetch artist', data: null }
+  }
+}
+
+/**
+ * Get artists by comic ID (admin, e.g. for dropdowns)
+ */
+export async function getArtistsByComicId(comicId: string) {
+  try {
+    const isAdmin = await checkAdminStatus()
+    if (!isAdmin) {
+      return { error: 'Unauthorized', data: null }
+    }
+
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('artists')
+      .select('*')
+      .eq('comic_id', comicId)
+      .order('name', { ascending: true })
+
+    if (error) {
+      return { error: error.message, data: null }
+    }
+
+    return { error: null, data }
+  } catch (error: any) {
+    return { error: error.message || 'Failed to fetch artists', data: null }
+  }
+}
+
+/**
+ * Create artist
+ */
+export async function createArtist(formData: FormData) {
+  try {
+    const isAdmin = await checkAdminStatus()
+    if (!isAdmin) {
+      return { error: 'Unauthorized: Admin access required', data: null }
+    }
+
+    const supabase = await createClient()
+
+    const name = formData.get('name') as string
+    const bio = (formData.get('bio') as string) || null
+    const hyperlink = (formData.get('hyperlink') as string) || null
+    const comicIdRaw = formData.get('comic_id') as string
+    const comic_id = comicIdRaw && comicIdRaw !== '' ? comicIdRaw : null
+    const social_handle = (formData.get('social_handle') as string) || null
+    const pictureFile = formData.get('picture') as File | null
+
+    if (!name?.trim()) {
+      return { error: 'Name is required', data: null }
+    }
+
+    const { data: artist, error: insertError } = await supabase
+      .from('artists')
+      .insert({
+        name: name.trim(),
+        bio: bio?.trim() || null,
+        hyperlink: hyperlink?.trim() || null,
+        comic_id,
+        social_handle: social_handle?.trim() || null,
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      return { error: insertError.message, data: null }
+    }
+
+    if (pictureFile && pictureFile instanceof File && pictureFile.size > 0) {
+      const uploadResult = await uploadArtistPicture(artist.id, pictureFile)
+      if (uploadResult.success && uploadResult.path) {
+        await supabase
+          .from('artists')
+          .update({ picture_path: uploadResult.path })
+          .eq('id', artist.id)
+        artist.picture_path = uploadResult.path
+      }
+    }
+
+    revalidatePath('/admin/artists')
+    revalidatePath('/admin/dashboard')
+    return { error: null, data: artist }
+  } catch (error: any) {
+    return { error: error.message || 'Failed to create artist', data: null }
+  }
+}
+
+/**
+ * Update artist
+ */
+export async function updateArtist(artistId: string, formData: FormData) {
+  try {
+    const isAdmin = await checkAdminStatus()
+    if (!isAdmin) {
+      return { error: 'Unauthorized: Admin access required', data: null }
+    }
+
+    const supabase = await createClient()
+
+    const name = formData.get('name') as string
+    const bio = (formData.get('bio') as string) || null
+    const hyperlink = (formData.get('hyperlink') as string) || null
+    const comicIdRaw = formData.get('comic_id') as string
+    const comic_id = comicIdRaw && comicIdRaw !== '' ? comicIdRaw : null
+    const social_handle = (formData.get('social_handle') as string) || null
+    const pictureFile = formData.get('picture') as File | null
+
+    if (!name?.trim()) {
+      return { error: 'Name is required', data: null }
+    }
+
+    const { data: existing } = await supabase
+      .from('artists')
+      .select('picture_path')
+      .eq('id', artistId)
+      .single()
+
+    const updateData: Record<string, unknown> = {
+      name: name.trim(),
+      bio: bio?.trim() || null,
+      hyperlink: hyperlink?.trim() || null,
+      comic_id,
+      social_handle: social_handle?.trim() || null,
+    }
+
+    if (pictureFile && pictureFile instanceof File && pictureFile.size > 0) {
+      const uploadResult = await uploadArtistPicture(artistId, pictureFile)
+      if (uploadResult.success && uploadResult.path) {
+        updateData.picture_path = uploadResult.path
+        if (existing?.picture_path && existing.picture_path !== uploadResult.path) {
+          await deleteComicFile(existing.picture_path)
+        }
+      }
+    }
+
+    const { data: artist, error } = await supabase
+      .from('artists')
+      .update(updateData)
+      .eq('id', artistId)
+      .select()
+      .single()
+
+    if (error) {
+      return { error: error.message, data: null }
+    }
+
+    revalidatePath('/admin/artists')
+    revalidatePath(`/admin/artists/${artistId}`)
+    return { error: null, data: artist }
+  } catch (error: any) {
+    return { error: error.message || 'Failed to update artist', data: null }
+  }
+}
+
+/**
+ * Delete artist
+ */
+export async function deleteArtist(artistId: string) {
+  try {
+    const isAdmin = await checkAdminStatus()
+    if (!isAdmin) {
+      return { error: 'Unauthorized: Admin access required' }
+    }
+
+    const supabase = await createClient()
+
+    const { data: artist } = await supabase
+      .from('artists')
+      .select('picture_path')
+      .eq('id', artistId)
+      .single()
+
+    if (artist?.picture_path) {
+      await deleteComicFile(artist.picture_path)
+    }
+
+    const { error } = await supabase
+      .from('artists')
+      .delete()
+      .eq('id', artistId)
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    revalidatePath('/admin/artists')
+    revalidatePath('/admin/dashboard')
+    return { error: null }
+  } catch (error: any) {
+    return { error: error.message || 'Failed to delete artist' }
   }
 }
 

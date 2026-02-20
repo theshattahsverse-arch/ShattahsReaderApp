@@ -12,7 +12,8 @@ import {
   LogOut, 
   Menu, 
   X,
-  Shield
+  Shield,
+  UserCircle
 } from 'lucide-react'
 
 interface AdminLayoutProps {
@@ -42,6 +43,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const navItems = [
     { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/comics/new', label: 'New Comic', icon: Plus },
+    { href: '/admin/artists', label: 'Artists', icon: UserCircle },
   ]
 
   return (

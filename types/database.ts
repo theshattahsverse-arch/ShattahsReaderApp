@@ -247,6 +247,41 @@ export interface Database {
           updated_at?: string
         }
       }
+      artists: {
+        Row: {
+          id: string
+          name: string
+          bio: string | null
+          picture_path: string | null
+          hyperlink: string | null
+          comic_id: string | null
+          social_handle: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          bio?: string | null
+          picture_path?: string | null
+          hyperlink?: string | null
+          comic_id?: string | null
+          social_handle?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          bio?: string | null
+          picture_path?: string | null
+          hyperlink?: string | null
+          comic_id?: string | null
+          social_handle?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -267,6 +302,7 @@ export type ComicPage = Database['public']['Tables']['comic_pages']['Row']
 export type UserFavorite = Database['public']['Tables']['user_favorites']['Row']
 export type ComicComment = Database['public']['Tables']['comic_comments']['Row']
 export type UserReadingProgress = Database['public']['Tables']['user_reading_progress']['Row']
+export type Artist = Database['public']['Tables']['artists']['Row']
 
 // Extended types
 export interface CommentWithUser {
