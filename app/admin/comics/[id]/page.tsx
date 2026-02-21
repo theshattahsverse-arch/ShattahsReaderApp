@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { ComicForm } from '@/components/admin/ComicForm'
 import { PageUploader } from '@/components/admin/PageUploader'
+import { CharacterManager } from '@/components/admin/CharacterManager'
 import { getComicById } from '@/lib/admin-actions'
 import { Separator } from '@/components/ui/separator'
 
@@ -32,6 +33,13 @@ export default async function ComicEditPage({ params }: ComicEditPageProps) {
         <div>
           <h2 className="mb-4 text-2xl font-bold">Manage Pages</h2>
           <PageUploader comicId={id} />
+        </div>
+
+        <Separator />
+
+        <div>
+          <h2 className="mb-4 text-2xl font-bold">Manage Characters</h2>
+          <CharacterManager comicId={id} />
         </div>
       </div>
     </AdminLayout>

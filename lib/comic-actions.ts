@@ -196,6 +196,35 @@ export async function getArtistsForComic(comicId: string) {
 }
 
 /**
+ * Get characters for a comic (public)
+ */
+export async function getCharactersForComic(comicId: string) {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('comic_characters')
+      .select('*')
+      .eq('comic_id', comicId)
+      .order('name', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching characters:', error)
+      return { error: error.message, data: null }
+    }
+
+    const charactersWithUrls = (data || []).map((character) => ({
+      ...character,
+      picture_url: getImageUrl(character.picture_path),
+    }))
+
+    return { error: null, data: charactersWithUrls }
+  } catch (error: any) {
+    console.error('Error in getCharactersForComic:', error)
+    return { error: error.message || 'Failed to fetch characters', data: null }
+  }
+}
+
+/**
  * Get a single page by ID
  */
 export async function getPageById(pageId: string) {

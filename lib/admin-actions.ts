@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { uploadComicCover, uploadArtistPicture, deleteComicFile } from '@/lib/storage-actions'
+import { uploadComicCover, uploadArtistPicture, uploadCharacterPicture, deleteComicFile } from '@/lib/storage-actions'
 import type { ComicStatus } from '@/types/database'
 
 /**
@@ -731,6 +731,203 @@ export async function deleteArtist(artistId: string) {
     return { error: null }
   } catch (error: any) {
     return { error: error.message || 'Failed to delete artist' }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Comic Characters (admin CRUD)
+// ---------------------------------------------------------------------------
+
+/**
+ * Get characters by comic ID (admin)
+ */
+export async function getCharactersByComicId(comicId: string) {
+  try {
+    const isAdmin = await checkAdminStatus()
+    if (!isAdmin) {
+      return { error: 'Unauthorized', data: null }
+    }
+
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('comic_characters')
+      .select('*')
+      .eq('comic_id', comicId)
+      .order('name', { ascending: true })
+
+    if (error) {
+      return { error: error.message, data: null }
+    }
+
+    return { error: null, data }
+  } catch (error: any) {
+    return { error: error.message || 'Failed to fetch characters', data: null }
+  }
+}
+
+/**
+ * Create character
+ */
+export async function createCharacter(formData: FormData) {
+  try {
+    const isAdmin = await checkAdminStatus()
+    if (!isAdmin) {
+      return { error: 'Unauthorized: Admin access required', data: null }
+    }
+
+    const supabase = await createClient()
+
+    const comic_id = formData.get('comic_id') as string
+    const name = (formData.get('name') as string)?.trim()
+    const title = (formData.get('title') as string)?.trim() || null
+    const handle = (formData.get('handle') as string)?.trim() || null
+    const bio = (formData.get('bio') as string)?.trim() || null
+    const pictureFile = formData.get('picture') as File | null
+
+    if (!comic_id || !name) {
+      return { error: 'Comic and name are required', data: null }
+    }
+
+    const { data: character, error: insertError } = await supabase
+      .from('comic_characters')
+      .insert({
+        comic_id,
+        name,
+        title,
+        handle,
+        bio,
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      return { error: insertError.message, data: null }
+    }
+
+    if (pictureFile && pictureFile instanceof File && pictureFile.size > 0) {
+      const uploadResult = await uploadCharacterPicture(character.id, pictureFile)
+      if (uploadResult.success && uploadResult.path) {
+        await supabase
+          .from('comic_characters')
+          .update({ picture_path: uploadResult.path })
+          .eq('id', character.id)
+        character.picture_path = uploadResult.path
+      }
+    }
+
+    revalidatePath(`/admin/comics/${comic_id}`)
+    revalidatePath('/admin/dashboard')
+    return { error: null, data: character }
+  } catch (error: any) {
+    return { error: error.message || 'Failed to create character', data: null }
+  }
+}
+
+/**
+ * Update character
+ */
+export async function updateCharacter(characterId: string, formData: FormData) {
+  try {
+    const isAdmin = await checkAdminStatus()
+    if (!isAdmin) {
+      return { error: 'Unauthorized: Admin access required', data: null }
+    }
+
+    const supabase = await createClient()
+
+    const name = (formData.get('name') as string)?.trim()
+    const title = (formData.get('title') as string)?.trim() || null
+    const handle = (formData.get('handle') as string)?.trim() || null
+    const bio = (formData.get('bio') as string)?.trim() || null
+    const pictureFile = formData.get('picture') as File | null
+
+    if (!name) {
+      return { error: 'Name is required', data: null }
+    }
+
+    const { data: existing } = await supabase
+      .from('comic_characters')
+      .select('picture_path, comic_id')
+      .eq('id', characterId)
+      .single()
+
+    const updateData: Record<string, unknown> = {
+      name,
+      title,
+      handle,
+      bio,
+    }
+
+    if (pictureFile && pictureFile instanceof File && pictureFile.size > 0) {
+      const uploadResult = await uploadCharacterPicture(characterId, pictureFile)
+      if (uploadResult.success && uploadResult.path) {
+        updateData.picture_path = uploadResult.path
+        if (existing?.picture_path && existing.picture_path !== uploadResult.path) {
+          await deleteComicFile(existing.picture_path)
+        }
+      }
+    }
+
+    const { data: character, error } = await supabase
+      .from('comic_characters')
+      .update(updateData)
+      .eq('id', characterId)
+      .select()
+      .single()
+
+    if (error) {
+      return { error: error.message, data: null }
+    }
+
+    const comicId = existing?.comic_id || character?.comic_id
+    if (comicId) {
+      revalidatePath(`/admin/comics/${comicId}`)
+    }
+    return { error: null, data: character }
+  } catch (error: any) {
+    return { error: error.message || 'Failed to update character', data: null }
+  }
+}
+
+/**
+ * Delete character
+ */
+export async function deleteCharacter(characterId: string) {
+  try {
+    const isAdmin = await checkAdminStatus()
+    if (!isAdmin) {
+      return { error: 'Unauthorized: Admin access required' }
+    }
+
+    const supabase = await createClient()
+
+    const { data: character } = await supabase
+      .from('comic_characters')
+      .select('picture_path, comic_id')
+      .eq('id', characterId)
+      .single()
+
+    if (character?.picture_path) {
+      await deleteComicFile(character.picture_path)
+    }
+
+    const { error } = await supabase
+      .from('comic_characters')
+      .delete()
+      .eq('id', characterId)
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    const comicId = character?.comic_id
+    if (comicId) {
+      revalidatePath(`/admin/comics/${comicId}`)
+    }
+    revalidatePath('/admin/dashboard')
+    return { error: null }
+  } catch (error: any) {
+    return { error: error.message || 'Failed to delete character' }
   }
 }
 

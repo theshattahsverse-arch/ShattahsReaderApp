@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { getComicById, getComicPages, getArtistsForComic } from '@/lib/comic-actions'
+import { getComicById, getComicPages, getArtistsForComic, getCharactersForComic } from '@/lib/comic-actions'
 import { 
   Star, 
   Eye, 
@@ -38,6 +38,7 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
   const { data: comic, error: comicError } = await getComicById(id)
   const { data: pages } = await getComicPages(id)
   const { data: artists } = await getArtistsForComic(id)
+  const { data: characters } = await getCharactersForComic(id)
 
   if (comicError || !comic) {
     notFound()
@@ -64,8 +65,6 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
       .map((s) => s.trim())
       .filter(Boolean)
   }
-
-  console.log("artists =>", artists)
 
   return (
     <div className="min-h-screen">
@@ -303,6 +302,51 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                 </div>
               )}
             </div>
+
+            {/* Characters */}
+            {characters && characters.length > 0 && (
+              <div className="mt-6 rounded-lg border border-border/50 bg-card/50 p-6">
+                <h2 className="mb-4 text-lg font-semibold">Characters</h2>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {characters.map((character) => (
+                    <div
+                      key={character.id}
+                      className="flex gap-4 rounded-lg border border-border/50 bg-background/40 p-4"
+                    >
+                      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-full border border-border/50">
+                        {character.picture_url ? (
+                          <Image
+                            src={character.picture_url}
+                            alt={character.name}
+                            fill
+                            sizes="64px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-muted text-lg font-semibold text-muted-foreground">
+                            {character.name.charAt(0)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold">{character.name}</h3>
+                        {character.title && (
+                          <p className="text-sm text-muted-foreground">{character.title}</p>
+                        )}
+                        {character.handle && (
+                          <p className="text-xs text-muted-foreground">@{character.handle}</p>
+                        )}
+                        {character.bio && (
+                          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                            {character.bio}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Artists */}
             {/* {artists && artists.length > 0 && (
