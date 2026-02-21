@@ -175,7 +175,7 @@ export function HeroSection() {
         >
           <Link
             href="/artists"
-            className="text-center transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-amber focus:ring-offset-2 focus:ring-offset-transparent rounded-lg"
+            className="animate-pulse-clickable text-center transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-amber focus:ring-offset-2 focus:ring-offset-transparent rounded-lg inline-block px-2 py-1 -m-2"
           >
             <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">
               <AnimatedCounter to={23} suffix="+" startWhen={startStats} />
