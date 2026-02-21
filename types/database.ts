@@ -251,6 +251,7 @@ export interface Database {
         Row: {
           id: string
           name: string
+          title: string | null
           bio: string | null
           picture_path: string | null
           hyperlink: string | null
@@ -262,6 +263,7 @@ export interface Database {
         Insert: {
           id?: string
           name: string
+          title?: string | null
           bio?: string | null
           picture_path?: string | null
           hyperlink?: string | null
@@ -273,6 +275,7 @@ export interface Database {
         Update: {
           id?: string
           name?: string
+          title?: string | null
           bio?: string | null
           picture_path?: string | null
           hyperlink?: string | null

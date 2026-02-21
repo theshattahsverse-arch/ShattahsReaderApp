@@ -32,7 +32,7 @@ export default async function ArtistSpotlightPage() {
         <div className="absolute left-[50%] top-[15%] h-1 w-1 rounded-full bg-amber-400/30 blur-sm" />
       </div>
 
-      <div className="relative mx-auto max-w-3xl px-4 pt-24 pb-16 sm:px-6 lg:px-8">
+      <div className="relative mx-auto max-w-6xl px-4 pt-24 pb-16 sm:px-6 lg:px-8">
         {/* Page title */}
         <header className="mb-16 text-center">
           <h1 className="text-4xl font-bold uppercase tracking-wide text-amber-500 sm:text-5xl">
@@ -51,11 +51,11 @@ export default async function ArtistSpotlightPage() {
         )}
 
         {!error && artists && artists.length > 0 && (
-          <div className="flex flex-col items-center gap-12">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
             {artists.map((artist) => (
               <article
                 key={artist.id}
-                className="w-full max-w-2xl rounded-2xl border border-amber-500/30 bg-zinc-900/95 px-6 py-8 shadow-xl backdrop-blur sm:px-10 sm:py-10"
+                className="w-full rounded-2xl border border-amber-500/30 bg-zinc-900/95 px-6 py-8 shadow-xl backdrop-blur sm:px-8 sm:py-10"
               >
                 {/* Gradient glow behind avatar */}
                 <div className="relative flex flex-col items-center text-center">
@@ -94,10 +94,20 @@ export default async function ArtistSpotlightPage() {
                     )}
                   </h2>
 
-                  {(artist.social_handle || !artist.bio) && (
-                    <p className="mt-1 text-xs uppercase tracking-widest text-white/70">
-                      {artist.social_handle ? `@${artist.social_handle}` : 'Artist'}
-                    </p>
+                  {(artist.title || artist.social_handle || !artist.bio) && (
+                    <div className="mt-2 space-y-1">
+                      {artist.title && (
+                        <p className="text-sm font-medium uppercase tracking-widest text-amber-400/95">
+                          {artist.title}
+                        </p>
+                      )}
+                      {artist.social_handle && (
+                        <p className="text-xs text-white/50">@{artist.social_handle}</p>
+                      )}
+                      {!artist.title && !artist.social_handle && (
+                        <p className="text-xs uppercase tracking-widest text-white/60">Artist</p>
+                      )}
+                    </div>
                   )}
 
                   {artist.bio && (

@@ -578,6 +578,7 @@ export async function createArtist(formData: FormData) {
     const supabase = await createClient()
 
     const name = formData.get('name') as string
+    const title = (formData.get('title') as string) || null
     const bio = (formData.get('bio') as string) || null
     const hyperlink = (formData.get('hyperlink') as string) || null
     const comicIdRaw = formData.get('comic_id') as string
@@ -593,6 +594,7 @@ export async function createArtist(formData: FormData) {
       .from('artists')
       .insert({
         name: name.trim(),
+        title: title?.trim() || null,
         bio: bio?.trim() || null,
         hyperlink: hyperlink?.trim() || null,
         comic_id,
@@ -637,6 +639,7 @@ export async function updateArtist(artistId: string, formData: FormData) {
     const supabase = await createClient()
 
     const name = formData.get('name') as string
+    const title = (formData.get('title') as string) || null
     const bio = (formData.get('bio') as string) || null
     const hyperlink = (formData.get('hyperlink') as string) || null
     const comicIdRaw = formData.get('comic_id') as string
@@ -656,6 +659,7 @@ export async function updateArtist(artistId: string, formData: FormData) {
 
     const updateData: Record<string, unknown> = {
       name: name.trim(),
+      title: title?.trim() || null,
       bio: bio?.trim() || null,
       hyperlink: hyperlink?.trim() || null,
       comic_id,

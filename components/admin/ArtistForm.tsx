@@ -17,6 +17,7 @@ import type { Comic } from '@/types/database'
 
 const artistSchema = z.object({
   name: z.string().min(1, 'Name is required'),
+  title: z.string().optional(),
   bio: z.string().optional(),
   hyperlink: z.string().optional(),
   comic_id: z.string().optional(),
@@ -60,6 +61,7 @@ export function ArtistForm({ artist }: ArtistFormProps) {
     defaultValues: artist
       ? {
           name: artist.name,
+          title: artist.title || '',
           bio: artist.bio || '',
           hyperlink: artist.hyperlink || '',
           comic_id: artist.comic_id || '',
@@ -89,6 +91,7 @@ export function ArtistForm({ artist }: ArtistFormProps) {
     try {
       const formData = new FormData()
       formData.append('name', data.name)
+      formData.append('title', data.title || '')
       formData.append('bio', data.bio || '')
       formData.append('hyperlink', data.hyperlink || '')
       formData.append('comic_id', data.comic_id || '')
@@ -147,6 +150,16 @@ export function ArtistForm({ artist }: ArtistFormProps) {
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              {...register('title')}
+              disabled={isLoading}
+              placeholder="e.g. Digital Sculptor, Cover Artist"
+            />
           </div>
 
           <div className="space-y-2">

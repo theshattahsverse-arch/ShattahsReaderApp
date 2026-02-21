@@ -173,12 +173,15 @@ export function HeroSection() {
           ref={statsRef}
           className="mt-16 grid grid-cols-3 gap-8 rounded-xl bg-black/40 px-8 py-6 backdrop-blur-sm sm:gap-16 sm:px-12"
         >
-          <div className="text-center">
+          <Link
+            href="/artists"
+            className="text-center transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-amber focus:ring-offset-2 focus:ring-offset-transparent rounded-lg"
+          >
             <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">
               <AnimatedCounter to={23} suffix="+" startWhen={startStats} />
             </div>
             <div className="text-sm text-white/70">Artists</div>
-          </div>
+          </Link>
           <div className="text-center">
             <div className="text-3xl font-bold text-amber drop-shadow-lg sm:text-4xl">
               50+
