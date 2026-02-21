@@ -13,11 +13,11 @@ import { Loader2, Save, UserCircle } from 'lucide-react'
 import type { ComicCharacter } from '@/types/database'
 
 const characterSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
   title: z.string().optional(),
-  handle: z.string().optional(),
-  bio: z.string().optional(),
   hyperlink: z.string().optional(),
+  // name: z.string().min(1, 'Name is required'),
+  // handle: z.string().optional(),
+  // bio: z.string().optional(),
 })
 
 type CharacterFormData = z.infer<typeof characterSchema>
@@ -48,18 +48,18 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
     resolver: zodResolver(characterSchema),
     defaultValues: character
       ? {
-          name: character.name,
           title: character.title || '',
-          handle: character.handle || '',
-          bio: character.bio || '',
           hyperlink: character.hyperlink || '',
+          // name: character.name,
+          // handle: character.handle || '',
+          // bio: character.bio || '',
         }
       : {
-          name: '',
           title: '',
-          handle: '',
-          bio: '',
           hyperlink: '',
+          // name: '',
+          // handle: '',
+          // bio: '',
         },
   })
 
@@ -80,11 +80,13 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
     try {
       const formData = new FormData()
       formData.append('comic_id', comicId)
-      formData.append('name', data.name)
+      formData.append('name', character ? character.name : (data.title || 'Character')) // name required by DB
       formData.append('title', data.title || '')
-      formData.append('handle', data.handle || '')
-      formData.append('bio', data.bio || '')
       formData.append('hyperlink', data.hyperlink || '')
+      if (character) {
+        formData.append('handle', character.handle || '')
+        formData.append('bio', character.bio || '')
+      }
       if (pictureFile) {
         formData.append('picture', pictureFile, pictureFile.name)
       }
@@ -116,6 +118,26 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
         {error && (
           <div className="rounded-md bg-destructive/10 p-2 text-sm text-destructive">{error}</div>
         )}
+        <div className="space-y-2">
+          <Label htmlFor="char-title">Title</Label>
+          <Input
+            id="char-title"
+            {...register('title')}
+            disabled={isLoading}
+            placeholder="e.g. Hero, Villain"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="char-hyperlink">Hyperlink</Label>
+          <Input
+            id="char-hyperlink"
+            type="url"
+            {...register('hyperlink')}
+            disabled={isLoading}
+            placeholder="https://..."
+          />
+        </div>
+        {/* Name - commented out
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="char-name">Name *</Label>
@@ -129,15 +151,6 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
               <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="char-title">Title</Label>
-            <Input
-              id="char-title"
-              {...register('title')}
-              disabled={isLoading}
-              placeholder="e.g. Hero, Villain"
-            />
-          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="char-handle">Handle</Label>
@@ -146,16 +159,6 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
             {...register('handle')}
             disabled={isLoading}
             placeholder="@handle or display handle"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="char-hyperlink">Hyperlink</Label>
-          <Input
-            id="char-hyperlink"
-            type="url"
-            {...register('hyperlink')}
-            disabled={isLoading}
-            placeholder="https://..."
           />
         </div>
         <div className="space-y-2">
@@ -168,6 +171,7 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
             className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
+        */}
         <div className="space-y-2">
           <Label htmlFor="char-picture">Picture</Label>
           <Input
@@ -216,22 +220,9 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
       <Card>
         <CardHeader>
           <CardTitle>{character ? 'Edit Character' : 'Add Character'}</CardTitle>
-          <CardDescription>Name, title, handle, bio, and picture for this comic</CardDescription>
+          <CardDescription>Title, hyperlink, and picture for this comic</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              {...register('name')}
-              disabled={isLoading}
-              placeholder="Character name"
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input
@@ -239,16 +230,6 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
               {...register('title')}
               disabled={isLoading}
               placeholder="e.g. Hero, Villain, Sidekick"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="handle">Handle</Label>
-            <Input
-              id="handle"
-              {...register('handle')}
-              disabled={isLoading}
-              placeholder="@handle or display name"
             />
           </div>
 
@@ -263,6 +244,28 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
             />
           </div>
 
+          {/* Name, handle, bio - commented out
+          <div className="space-y-2">
+            <Label htmlFor="name">Name *</Label>
+            <Input
+              id="name"
+              {...register('name')}
+              disabled={isLoading}
+              placeholder="Character name"
+            />
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="handle">Handle</Label>
+            <Input
+              id="handle"
+              {...register('handle')}
+              disabled={isLoading}
+              placeholder="@handle or display name"
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="bio">Bio</Label>
             <textarea
@@ -273,6 +276,7 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
               className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
+          */}
         </CardContent>
       </Card>
 

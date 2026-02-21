@@ -307,54 +307,60 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
             {characters && characters.length > 0 && (
               <div className="mt-6 rounded-lg border border-border/50 bg-card/50 p-6">
                 <h2 className="mb-4 text-lg font-semibold">Characters</h2>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-5 gap-3">
                   {characters.map((character) => (
                     <div
                       key={character.id}
-                      className="flex gap-4 rounded-lg border border-border/50 bg-background/40 p-4"
+                      className="flex flex-col rounded-lg border border-border/50 bg-background/40 p-4"
                     >
-                      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-full border border-border/50">
+                      {/* Picture */}
+                      <div className="relative mx-auto aspect-square w-24 overflow-hidden rounded-full border border-border/50">
                         {character.picture_url ? (
                           <Image
                             src={character.picture_url}
-                            alt={character.name}
+                            alt={character.title || character.name}
                             fill
-                            sizes="64px"
+                            sizes="96px"
                             className="object-cover"
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-muted text-lg font-semibold text-muted-foreground">
-                            {character.name.charAt(0)}
+                          <div className="flex h-full w-full items-center justify-center bg-muted text-2xl font-semibold text-muted-foreground">
+                            {(character.title || character.name).charAt(0)}
                           </div>
                         )}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold">{character.name}</h3>
-                        {character.title && (
-                          <p className="text-sm text-muted-foreground">
-                            {character.hyperlink ? (
-                              <a
-                                href={character.hyperlink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-amber hover:underline"
-                              >
-                                {character.title}
-                              </a>
-                            ) : (
-                              character.title
-                            )}
-                          </p>
-                        )}
-                        {character.handle && (
-                          <p className="text-xs text-muted-foreground">@{character.handle}</p>
-                        )}
-                        {character.bio && (
-                          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                            {character.bio}
-                          </p>
-                        )}
-                      </div>
+                      {/* Title (hyperlinked when hyperlink is set) */}
+                      {character.title && (
+                        <p className="mt-3 text-center text-sm text-muted-foreground">
+                          {character.hyperlink ? (
+                            <a
+                              href={character.hyperlink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-amber hover:underline"
+                            >
+                              {character.title}
+                            </a>
+                          ) : (
+                            character.title
+                          )}
+                        </p>
+                      )}
+                      {/* Name - commented out
+                      <h3 className="mt-3 text-center font-semibold">{character.name}</h3>
+                      */}
+                      {/* Handle - commented out
+                      {character.handle && (
+                        <p className="mt-1 text-center text-xs text-muted-foreground">
+                          @{character.handle}
+                        </p>
+                      )} */}
+                      {/* Bio - commented out
+                      {character.bio && (
+                        <p className="mt-2 text-center text-sm text-muted-foreground">
+                          {character.bio}
+                        </p>
+                      )} */}
                     </div>
                   ))}
                 </div>
