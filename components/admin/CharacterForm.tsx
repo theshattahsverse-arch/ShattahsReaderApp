@@ -17,6 +17,7 @@ const characterSchema = z.object({
   title: z.string().optional(),
   handle: z.string().optional(),
   bio: z.string().optional(),
+  hyperlink: z.string().optional(),
 })
 
 type CharacterFormData = z.infer<typeof characterSchema>
@@ -51,12 +52,14 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
           title: character.title || '',
           handle: character.handle || '',
           bio: character.bio || '',
+          hyperlink: character.hyperlink || '',
         }
       : {
           name: '',
           title: '',
           handle: '',
           bio: '',
+          hyperlink: '',
         },
   })
 
@@ -81,6 +84,7 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
       formData.append('title', data.title || '')
       formData.append('handle', data.handle || '')
       formData.append('bio', data.bio || '')
+      formData.append('hyperlink', data.hyperlink || '')
       if (pictureFile) {
         formData.append('picture', pictureFile, pictureFile.name)
       }
@@ -142,6 +146,16 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
             {...register('handle')}
             disabled={isLoading}
             placeholder="@handle or display handle"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="char-hyperlink">Hyperlink</Label>
+          <Input
+            id="char-hyperlink"
+            type="url"
+            {...register('hyperlink')}
+            disabled={isLoading}
+            placeholder="https://..."
           />
         </div>
         <div className="space-y-2">
@@ -235,6 +249,17 @@ export function CharacterForm({ comicId, character, onSuccess, onCancel, compact
               {...register('handle')}
               disabled={isLoading}
               placeholder="@handle or display name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="hyperlink">Hyperlink</Label>
+            <Input
+              id="hyperlink"
+              type="url"
+              {...register('hyperlink')}
+              disabled={isLoading}
+              placeholder="https://..."
             />
           </div>
 

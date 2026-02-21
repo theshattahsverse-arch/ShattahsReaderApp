@@ -331,7 +331,20 @@ export default async function ComicDetailPage({ params }: ComicDetailPageProps) 
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold">{character.name}</h3>
                         {character.title && (
-                          <p className="text-sm text-muted-foreground">{character.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {character.hyperlink ? (
+                              <a
+                                href={character.hyperlink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-amber hover:underline"
+                              >
+                                {character.title}
+                              </a>
+                            ) : (
+                              character.title
+                            )}
+                          </p>
                         )}
                         {character.handle && (
                           <p className="text-xs text-muted-foreground">@{character.handle}</p>

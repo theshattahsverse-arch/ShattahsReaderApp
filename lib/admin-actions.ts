@@ -782,6 +782,7 @@ export async function createCharacter(formData: FormData) {
     const title = (formData.get('title') as string)?.trim() || null
     const handle = (formData.get('handle') as string)?.trim() || null
     const bio = (formData.get('bio') as string)?.trim() || null
+    const hyperlink = (formData.get('hyperlink') as string)?.trim() || null
     const pictureFile = formData.get('picture') as File | null
 
     if (!comic_id || !name) {
@@ -796,6 +797,7 @@ export async function createCharacter(formData: FormData) {
         title,
         handle,
         bio,
+        hyperlink,
       })
       .select()
       .single()
@@ -839,6 +841,7 @@ export async function updateCharacter(characterId: string, formData: FormData) {
     const title = (formData.get('title') as string)?.trim() || null
     const handle = (formData.get('handle') as string)?.trim() || null
     const bio = (formData.get('bio') as string)?.trim() || null
+    const hyperlink = (formData.get('hyperlink') as string)?.trim() || null
     const pictureFile = formData.get('picture') as File | null
 
     if (!name) {
@@ -856,6 +859,7 @@ export async function updateCharacter(characterId: string, formData: FormData) {
       title,
       handle,
       bio,
+      hyperlink,
     }
 
     if (pictureFile && pictureFile instanceof File && pictureFile.size > 0) {

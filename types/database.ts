@@ -293,6 +293,7 @@ export interface Database {
           title: string | null
           handle: string | null
           bio: string | null
+          hyperlink: string | null
           picture_path: string | null
           created_at: string
           updated_at: string
@@ -304,6 +305,7 @@ export interface Database {
           title?: string | null
           handle?: string | null
           bio?: string | null
+          hyperlink?: string | null
           picture_path?: string | null
           created_at?: string
           updated_at?: string
@@ -315,6 +317,7 @@ export interface Database {
           title?: string | null
           handle?: string | null
           bio?: string | null
+          hyperlink?: string | null
           picture_path?: string | null
           created_at?: string
           updated_at?: string
