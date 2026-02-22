@@ -257,6 +257,7 @@ export interface Database {
           hyperlink: string | null
           comic_id: string | null
           social_handle: string | null
+          is_visible: boolean
           created_at: string
           updated_at: string
         }
@@ -269,6 +270,7 @@ export interface Database {
           hyperlink?: string | null
           comic_id?: string | null
           social_handle?: string | null
+          is_visible?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -281,6 +283,7 @@ export interface Database {
           hyperlink?: string | null
           comic_id?: string | null
           social_handle?: string | null
+          is_visible?: boolean
           created_at?: string
           updated_at?: string
         }

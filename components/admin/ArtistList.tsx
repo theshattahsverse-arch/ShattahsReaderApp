@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getAllArtists, deleteArtist } from '@/lib/admin-actions'
+import { getAllArtists, deleteArtist, updateArtistVisibility } from '@/lib/admin-actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Edit, Trash2, Loader2, Plus, UserCircle } from 'lucide-react'
@@ -15,6 +15,7 @@ export function ArtistList() {
   const [artists, setArtists] = useState<ArtistRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
 
   useEffect(() => {
     loadArtists()
@@ -44,6 +45,21 @@ export function ArtistList() {
       await loadArtists()
     }
     setDeletingId(null)
+  }
+
+  const handleVisibilityToggle = async (artistId: string, currentVisible: boolean) => {
+    setTogglingId(artistId)
+    const { error } = await updateArtistVisibility(artistId, !currentVisible)
+    if (error) {
+      alert(`Failed to update: ${error}`)
+    } else {
+      setArtists((prev) =>
+        prev.map((a) =>
+          a.id === artistId ? { ...a, is_visible: !currentVisible } : a
+        )
+      )
+    }
+    setTogglingId(null)
   }
 
   const pictureUrl = (path: string | null) =>
@@ -109,7 +125,28 @@ export function ArtistList() {
               )}
             </div>
             <CardHeader>
-              <CardTitle className="line-clamp-1">{artist.name}</CardTitle>
+              <div className="flex items-start justify-between gap-2">
+                <CardTitle className="line-clamp-1">{artist.name}</CardTitle>
+                <div className="flex flex-shrink-0 items-center gap-2">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">Show on site</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={artist.is_visible}
+                    disabled={togglingId === artist.id}
+                    onClick={() => handleVisibilityToggle(artist.id, artist.is_visible)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+                      artist.is_visible ? 'bg-primary' : 'bg-muted'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition ${
+                        artist.is_visible ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
               <CardDescription>
                 {artist.comics?.title ? (
                   <span>Linked to: {artist.comics.title}</span>

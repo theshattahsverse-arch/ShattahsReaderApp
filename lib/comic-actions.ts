@@ -147,6 +147,7 @@ export async function getAllArtistsPublic() {
     const { data, error } = await supabase
       .from('artists')
       .select('*')
+      .eq('is_visible', true)
       .order('name', { ascending: true })
 
     if (error) {
@@ -176,6 +177,7 @@ export async function getArtistsForComic(comicId: string) {
       .from('artists')
       .select('*')
       .eq('comic_id', comicId)
+      .eq('is_visible', true)
       .order('name', { ascending: true })
 
     if (error) {

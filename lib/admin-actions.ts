@@ -599,6 +599,7 @@ export async function createArtist(formData: FormData) {
         hyperlink: hyperlink?.trim() || null,
         comic_id,
         social_handle: social_handle?.trim() || null,
+        is_visible: true,
       })
       .select()
       .single()
@@ -692,6 +693,36 @@ export async function updateArtist(artistId: string, formData: FormData) {
     return { error: null, data: artist }
   } catch (error: any) {
     return { error: error.message || 'Failed to update artist', data: null }
+  }
+}
+
+/**
+ * Toggle artist visibility on the public Artist Spotlight page
+ */
+export async function updateArtistVisibility(artistId: string, isVisible: boolean) {
+  try {
+    const isAdmin = await checkAdminStatus()
+    if (!isAdmin) {
+      return { error: 'Unauthorized: Admin access required', data: null }
+    }
+
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('artists')
+      .update({ is_visible: isVisible })
+      .eq('id', artistId)
+      .select()
+      .single()
+
+    if (error) {
+      return { error: error.message, data: null }
+    }
+
+    revalidatePath('/admin/artists')
+    revalidatePath('/artists')
+    return { error: null, data }
+  } catch (error: any) {
+    return { error: error.message || 'Failed to update visibility', data: null }
   }
 }
 
