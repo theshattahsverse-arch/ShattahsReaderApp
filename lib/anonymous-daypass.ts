@@ -4,7 +4,7 @@ import { calculateSubscriptionEndDate } from './subscription-actions'
 import { updateUserSubscription } from './subscription-actions'
 
 const SESSION_ID_COOKIE_NAME = 'daypass_session_id'
-const SESSION_ID_COOKIE_MAX_AGE = 4 * 60 * 60 // 4 hours in seconds (matches day pass limit)
+const SESSION_ID_COOKIE_MAX_AGE = 3 * 60 * 60 // 3 hours in seconds (matches day pass limit)
 
 /**
  * Generate a unique session ID for anonymous Day Pass

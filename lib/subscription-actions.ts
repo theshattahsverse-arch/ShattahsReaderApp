@@ -112,8 +112,8 @@ export function calculateSubscriptionEndDate(planType: 'member' | 'daypass'): Da
   const now = new Date()
   
   if (planType === 'daypass') {
-    // Day pass expires after 4 hours
-    return new Date(now.getTime() + 4 * 60 * 60 * 1000)
+    // Day pass expires after 3 hours
+    return new Date(now.getTime() + 3 * 60 * 60 * 1000)
   } else if (planType === 'member') {
     // Weekly subscription - add 7 days
     return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
